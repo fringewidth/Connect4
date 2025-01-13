@@ -2,7 +2,7 @@
 #include "constants.h"
 #include <random>
 #include <cmath>
-
+#include <thread>
 
 
 const auto USER_TURN = RED;
@@ -107,14 +107,18 @@ int BotPlayer::askBot() {
         }
         gameBoard.undoMove();
     }
-    AXLOG("best move: %d", bestMove);
     return bestMove;
 }
 
 void BotPlayer::onMouseDown(ax::Event* event){
     if(gameBoard.getCurrentTurn() == USER_TURN) {
         MainScene::onMouseDown(event);
-        if(!gameBoard.isGameOver())
-            placeDisc(askBot());
+        
+        if(!gameBoard.isGameOver()){
+            std::thread botThread([this]() {
+                placeDisc(askBot());
+            });
+            botThread.detach();
+        }
     }
 }

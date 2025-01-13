@@ -18,7 +18,7 @@ enum TURN {
 };
 
 struct move {
-    int row;
+    int row; 
     TURN turn;
 };
 
