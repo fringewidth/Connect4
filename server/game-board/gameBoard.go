@@ -24,6 +24,11 @@ type GameBoard struct {
 
 // private: checkrowfull, validateboard, changeturn
 
+func (g *GameBoard) Init() {
+	g.rowOccupancies = [7]int{-1, -1, -1, -1, -1, -1, -1}
+	g.currentTurn = RED
+}
+
 func (g *GameBoard) IsRedTurn() bool {
 	return g.currentTurn == RED
 }
@@ -111,7 +116,7 @@ func (g *GameBoard) MakeMove(row int) {
 	g.validateBoard()
 }
 
-func (g *GameBoard) undoMove() {
+func (g *GameBoard) UndoMove() {
 	lastMove := g.movesDone[len(g.movesDone)-1]
 	g.movesDone = g.movesDone[:len(g.movesDone)-1]
 	g.ChangeTurn()
@@ -125,6 +130,6 @@ func (g *GameBoard) GetCurrentturn() TURN {
 	return g.currentTurn
 }
 
-func (g *GameBoard) isGameOver() bool {
+func (g *GameBoard) IsGameOver() bool {
 	return g.gameOver
 }

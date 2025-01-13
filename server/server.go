@@ -1,8 +1,8 @@
 package main
 
 import (
+	gameBoard "Connect4Server/game-board"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -41,6 +41,8 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 	defer closeConnection(conn)
 
 	fmt.Println("Client connected")
+	var gb gameBoard.GameBoard
+	gb.Init()
 
 	for {
 		fmt.Println("Awaiting user message...")
@@ -49,8 +51,9 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error while reading user JSON.")
 		}
 		fmt.Printf("User move received: %d\n", userMove.LastMove)
+		gb.MakeMove(userMove.LastMove)
 		fmt.Println("Thinking...")
-		move := rand.Intn(7)
+		move := askBot(&gb)
 		timestamp := time.Now().UnixMilli()
 
 		returnMessage := Message{LastMove: move, Timestamp: timestamp}
