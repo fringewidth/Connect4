@@ -10,6 +10,7 @@
 #include<array>
 #include "MoveScore.h"
 
+
 enum TURN {
     RED = 1,
     YELLOW = -1,
@@ -24,7 +25,6 @@ struct move {
 class GameBoard {
 private:
     std::stack<move> movesDone;
-    std::array<std::array<int, 6>, 7> game_board_map{0};
     std::array<int, 7> row_occupancies = {-1, -1, -1, -1, -1, -1, -1};
     TURN currentTurn = RED;
     
@@ -35,6 +35,7 @@ private:
     bool gameOver = false;
     
 public:
+    std::array<std::array<int, 6>, 7> game_board_map{0};
     bool isRedTurn();
     bool isValidMove(int);
     int makeMoveAndGetCol(int);

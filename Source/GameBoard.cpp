@@ -37,7 +37,6 @@ int GameBoard::makeMoveAndGetCol(int row){
         return -1;
     }
     movesDone.push({row, currentTurn});
-    AXLOG("Pushed %d on movesDone stack.", movesDone.top().row);
     game_board_map[row][++row_occupancies[row]] = static_cast<int>(currentTurn);
     changeTurn();
     validateBoard();
@@ -47,13 +46,10 @@ int GameBoard::makeMoveAndGetCol(int row){
 void GameBoard::undoMove() {
     auto lastMove = movesDone.top();
     movesDone.pop();
-    for(int i = 0; i < 7; i++){
-        AXLOG("%d", row_occupancies[i]);
-    }
-    AXLOG("Last move: %d", lastMove.row);
     changeTurn();
-    AXLOG("[%d][%d]", row_occupancies[lastMove.row], lastMove.row);
-    game_board_map[row_occupancies[lastMove.row]][lastMove.row] = 0;
+    
+    game_board_map[lastMove.row][row_occupancies[lastMove.row]] = 0;
+    gameOver = false;
     row_occupancies[lastMove.row]--;
 }
 
