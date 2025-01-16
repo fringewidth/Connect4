@@ -74,7 +74,10 @@ public:
     int placeDisc(int);
     int placeDiscAt(ax::Vec2);
     ax::Vec2 getBoardCoords(int, int);
-    ax::Sprite* getDisc(TURN color);
+    ax::Sprite* getDisc(TURN, bool);
+    void signalGameOver();
+    ax::Rect getRect(TURN);
+    void glowUp(int, int, TURN);
 
 };
 

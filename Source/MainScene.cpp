@@ -20,18 +20,44 @@ Vec2 MainScene::getBoardCoords(int up, int right){
     return DISC_ORIGIN + up * DISC_UP + right * DISC_RIGHT;
 }
 
-Sprite* MainScene::getDisc(TURN color) {
-    Rect rect;
+Rect MainScene::getRect(TURN color) {
     switch(color) {
         case RED:
-            rect = Rect(0, 0, 78, 78);
-            break;
+            return Rect(0, 0, 78, 78);
         case YELLOW:
         default:
-            rect = Rect(78, 0, 78, 78);
-            break;
+            return Rect(78, 0, 78, 78);
     }
-    return Sprite::create("disc.png"sv, rect);
+}
+
+Sprite* MainScene::getDisc(TURN color, bool glowing=false) {
+    Rect rect = getRect(color);
+    auto fileName = glowing? "glows.png"sv : "disc.png"sv;
+    return Sprite::create(fileName, rect);
+}
+
+void MainScene::glowUp(int up, int right, TURN winner) {
+    auto glow = getDisc(winner, true);
+    auto boardCoords = getBoardCoords(right, up);
+    
+    if(glow){
+        glow->setScale(SCALE);
+        glow->setPosition(boardCoords);
+        glow->setLocalZOrder(10);
+        Sequence* seq = Sequence::create(Hide::create(), DelayTime::create(0.9), Blink::create(1.0, 4), NULL);
+        glow->runAction(seq);
+        this->addChild(glow);
+
+    }
+//    Rect rect = getRect(static_cast<TURN>(), )
+//    auto coinGlow = Sprite::create("glows.png"sv, )
+}
+
+void MainScene::signalGameOver() {
+    auto winner = gameBoard.getCurrentTurn();
+    for(auto coinCoords : gameBoard.getWinningCoins()){
+        glowUp(coinCoords.first, coinCoords.second, winner);
+    }
 }
 
 // returns 1 for failure, 0 for success.
@@ -42,7 +68,7 @@ int MainScene::placeDisc(int right){
     int up = gameBoard.makeMoveAndGetCol(right);
     if(up < 0) return DISC_UNPLACED;
     auto disc = getDisc(gameBoard.getCurrentTurn());
-    if(disc) {
+    if(disc) {        
         disc->setScale(SCALE);
         disc->setPosition(getBoardCoords(INT_MAX, right) + DISC_UP);
         
@@ -55,6 +81,9 @@ int MainScene::placeDisc(int right){
         
         disc->runAction(seq);
         this->addChild(disc, 1);
+        if(gameBoard.isGameOver()) {
+            signalGameOver();
+        }
         return DISC_PLACED;
     }
 

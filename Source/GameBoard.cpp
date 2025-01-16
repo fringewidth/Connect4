@@ -11,6 +11,11 @@ bool GameBoard::isRedTurn() {
     return currentTurn == RED;
 }
 
+
+std::array<std::pair<int, int>, 4> GameBoard::getWinningCoins() {
+    return winningCoins;
+}
+
 move GameBoard::getLastMove() {
     
     return movesDone.top();
@@ -70,6 +75,10 @@ void GameBoard::validateBoard() {
                 player == game_board_map[col + 2][row] &&
                 player == game_board_map[col + 3][row]) {
                 gameOver = true;
+                winningCoins[0] = std::make_pair(col, row);
+                winningCoins[1] = std::make_pair(col+1, row);
+                winningCoins[2] = std::make_pair(col+2, row);
+                winningCoins[3] = std::make_pair(col+3, row);
                 return;
             }
         }
@@ -83,6 +92,10 @@ void GameBoard::validateBoard() {
                 player == game_board_map[col][row + 2] &&
                 player == game_board_map[col][row + 3]) {
                 gameOver = true;
+                winningCoins[0] = std::make_pair(col, row);
+                winningCoins[1] = std::make_pair(col, row+1);
+                winningCoins[2] = std::make_pair(col, row+2);
+                winningCoins[3] = std::make_pair(col, row+3);
                 return;
             }
         }
@@ -96,6 +109,10 @@ void GameBoard::validateBoard() {
                 player == game_board_map[col + 2][row + 2] &&
                 player == game_board_map[col + 3][row + 3]) {
                 gameOver = true;
+                winningCoins[0] = std::make_pair(col, row);
+                winningCoins[1] = std::make_pair(col+1, row+1);
+                winningCoins[2] = std::make_pair(col+2, row+2);
+                winningCoins[3] = std::make_pair(col+3, row+3);
                 return;
             }
         }
@@ -110,6 +127,10 @@ void GameBoard::validateBoard() {
                 player == game_board_map[col - 2][row + 2] &&
                 player == game_board_map[col - 3][row + 3]) {
                 gameOver = true;
+                winningCoins[0] = std::make_pair(col, row);
+                winningCoins[1] = std::make_pair(col-1, row+1);
+                winningCoins[2] = std::make_pair(col-2, row+2);
+                winningCoins[3] = std::make_pair(col-3, row+3);
                 return;
             }
         }

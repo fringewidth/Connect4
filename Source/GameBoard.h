@@ -24,6 +24,12 @@ struct move {
 
 class GameBoard {
 private:
+    std::array<std::pair<int, int>, 4> winningCoins = {
+        std::make_pair(-1, -1),
+        std::make_pair(-1, -1),
+        std::make_pair(-1, -1),
+        std::make_pair(-1, -1)
+    };
     std::stack<move> movesDone;
     std::array<int, 7> row_occupancies = {-1, -1, -1, -1, -1, -1, -1};
     TURN currentTurn = RED;
@@ -35,6 +41,7 @@ private:
     bool gameOver = false;
     
 public:
+    std::array<std::pair<int, int>, 4> getWinningCoins();
     std::array<std::array<int, 6>, 7> game_board_map{0};
     bool isRedTurn();
     bool isValidMove(int);
