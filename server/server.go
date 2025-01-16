@@ -20,7 +20,7 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	http.HandleFunc("/", handleFunc)
-	fmt.Println("Server starting on port 8080...")
+	fmt.Println("Server started on port 8080.")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
@@ -53,12 +53,13 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("User move received: %d\n", userMove.LastMove)
 		gb.MakeMove(userMove.LastMove)
 		fmt.Println("Thinking...")
-		move := askBot(&gb)
+		botMove := askBot(&gb)
+		gb.MakeMove(botMove)
 		timestamp := time.Now().UnixMilli()
 
-		returnMessage := Message{LastMove: move, Timestamp: timestamp}
+		returnMessage := Message{LastMove: botMove, Timestamp: timestamp}
 
-		fmt.Printf("Move: %d, Timestamp: %d\n", move, timestamp)
+		fmt.Printf("Move: %d, Timestamp: %d\n", botMove, timestamp)
 		if err := conn.WriteJSON(returnMessage); err != nil {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 				fmt.Println("Connection closed by user.")

@@ -2,7 +2,6 @@ package main
 
 import (
 	gameBoard "Connect4Server/game-board"
-	"fmt"
 	"math"
 )
 
@@ -21,13 +20,13 @@ func Min(a, b int) int {
 }
 
 func checkAlignment(gb *gameBoard.GameBoard, row int, col int, dRow int, dCol int) int {
-	piece := gb.GameBoardMap[col][row]
+	piece := gb.GameBoardMap[row][col]
 	alignmentCount := 1
 
 	for i := 1; i < 4; i++ {
 		newRow := row + i*dRow
 		newCol := col + i*dCol
-		if newRow >= 0 && newRow < 6 && newCol > 0 && newCol < 7 && gb.GameBoardMap[newCol][newRow] == piece {
+		if newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 7 && gb.GameBoardMap[newRow][newCol] == piece {
 			alignmentCount++
 		} else {
 			break
@@ -36,7 +35,7 @@ func checkAlignment(gb *gameBoard.GameBoard, row int, col int, dRow int, dCol in
 	for i := 1; i < 4; i++ {
 		newRow := row - i*dRow
 		newCol := col - i*dCol
-		if newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 7 && gb.GameBoardMap[newCol][newRow] == piece {
+		if newRow >= 0 && newRow < 6 && newCol >= 0 && newCol < 7 && gb.GameBoardMap[newRow][newCol] == piece {
 			alignmentCount++
 		} else {
 			break
@@ -44,7 +43,7 @@ func checkAlignment(gb *gameBoard.GameBoard, row int, col int, dRow int, dCol in
 	}
 
 	if alignmentCount >= 2 {
-		return int(math.Pow(100, float64(alignmentCount-1)) * -1 * float64(piece))
+		return int(math.Pow(100, float64(alignmentCount-1)) * float64(piece))
 		// ^ this should be variable based on user turn
 	}
 
@@ -56,11 +55,13 @@ func evaluateBoard(gb *gameBoard.GameBoard) int {
 
 	for row := 0; row < 6; row++ {
 		for col := 0; col < 7; col++ {
-			if gb.GameBoardMap[col][row] != 0 {
+			if gb.GameBoardMap[row][col] != 0 {
 				score += checkAlignment(gb, row, col, 1, 0)  // EW
 				score += checkAlignment(gb, row, col, 0, 1)  // NS
 				score += checkAlignment(gb, row, col, 1, 1)  // NW
 				score += checkAlignment(gb, row, col, 1, -1) // NE
+			} else {
+
 			}
 		}
 	}
@@ -70,7 +71,8 @@ func evaluateBoard(gb *gameBoard.GameBoard) int {
 
 func minimax(gb *gameBoard.GameBoard, alpha, beta, depth int, isMaximizing bool) int {
 	if depth == 0 || gb.IsGameOver() {
-		return evaluateBoard(gb)
+		score := evaluateBoard(gb)
+		return score
 	}
 	var best_score int
 	if isMaximizing {
@@ -100,12 +102,10 @@ func minimax(gb *gameBoard.GameBoard, alpha, beta, depth int, isMaximizing bool)
 			break
 		}
 	}
-
 	return best_score
 }
 
 func askBot(gb *gameBoard.GameBoard) int {
-	fmt.Println("Asking bot")
 	bestMove := -1
 	bestScore := math.MinInt
 	for col := 0; col < 7; col++ {
