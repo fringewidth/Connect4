@@ -66,6 +66,7 @@ public:
     
     
 private:
+    ax::Label* backLabel = nullptr;
     GameState _gameState = GameState::init;
     
     

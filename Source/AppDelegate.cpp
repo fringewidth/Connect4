@@ -27,8 +27,10 @@
 #include "MainScene.h"
 #include "BotPlayer.h"
 #include "BotPlayerServer.h"
-
+#include "LoadScreen.h"
 #define USE_AUDIO_ENGINE 1
+
+#define STARTING_SCENE LoadScreen
 
 #if USE_AUDIO_ENGINE
 #    include "audio/AudioEngine.h"
@@ -82,7 +84,7 @@ bool AppDelegate::applicationDidFinishLaunching()
                                     ResolutionPolicy::SHOW_ALL);
 
     // create a scene. it's an autorelease object
-    auto scene = utils::createInstance<BotPlayer>();
+    auto scene = utils::createInstance<STARTING_SCENE>();
 
     // run
     director->runWithScene(scene);

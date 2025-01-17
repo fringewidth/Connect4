@@ -1,17 +1,10 @@
 #include "MainScene.h"
 #include "constants.h"
+#include "LoadScreen.h"
 #include <boost/asio.hpp>
 
 using namespace ax;
 
-// Print useful error message instead of segfaulting when files are not there.
-static void problemLoading(const char* filename)
-{
-    printf("Error while loading: %s\n", filename);
-    printf(
-        "Depending on how you compiled you might have to add 'Content/' in front of filenames in "
-        "MainScene.cpp\n");
-}
 
 Vec2 MainScene::getBoardCoords(int up, int right){
     right = std::max(std::min(right, 6), 0);
@@ -97,18 +90,26 @@ int MainScene::placeDisc(int right){
 // returns 1 for success, zero for failure
 int MainScene::placeDiscAt(Vec2 sceneCoords) {
     int columnIndex = std::round((sceneCoords - DISC_ORIGIN).x/(94.4914 * SCALE)); // some issues with tuning the origin is causing this.
-    if(columnIndex < 0 || columnIndex > 6) return;
+    if(columnIndex < 0 || columnIndex > 6){
+        return;
+    }
     return this->placeDisc(columnIndex);
 }
 
 
-static void center(Sprite *&background, const Vec2 &origin, const Vec2 &visibleSize) {
-    background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-}
+
 
 // on "init" you need to initialize your instance
 bool MainScene::init()
 {
+    AXLOG("MainScene::init() called.");
+    if (!Scene::init())
+    {
+        AXLOG("Scene initialization failed!");
+        return false;
+    }
+
+    AXLOG("Scene initialized successfully!");
     //////////////////////////////
     // 1. super init first
     if (!Scene::init())
@@ -126,24 +127,38 @@ bool MainScene::init()
     //    you may modify it.
 
     // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png",
-        AX_CALLBACK_1(MainScene::menuCloseCallback, this));
+//    auto closeItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png",
+//        AX_CALLBACK_1(MainScene::menuCloseCallback, this));
+//
+//    if (closeItem == nullptr || closeItem->getContentSize().width <= 0 || closeItem->getContentSize().height <= 0)
+//    {
+//        problemLoading("'CloseNormal.png' and 'CloseSelected.png'");
+//    }
+//    else
+//    {
+//        float x = safeOrigin.x + safeArea.size.width - closeItem->getContentSize().width / 2;
+//        float y = safeOrigin.y + closeItem->getContentSize().height / 2;
+//        closeItem->setPosition(Vec2(x, y));
+//    }
 
-    if (closeItem == nullptr || closeItem->getContentSize().width <= 0 || closeItem->getContentSize().height <= 0)
-    {
-        problemLoading("'CloseNormal.png' and 'CloseSelected.png'");
-    }
-    else
-    {
-        float x = safeOrigin.x + safeArea.size.width - closeItem->getContentSize().width / 2;
-        float y = safeOrigin.y + closeItem->getContentSize().height / 2;
-        closeItem->setPosition(Vec2(x, y));
-    }
+//    // create menu, it's an autorelease object
+//    auto menu = Menu::create(closeItem, NULL);
+//    menu->setPosition(Vec2::ZERO);
+//    this->addChild(menu, 1);
+//    
+    
+    auto backLabel = Label::createWithTTF("Back", "fonts/Marker Felt.ttf", 24);
+        if (backLabel)
+        {
+            backLabel->enableOutline(Color4B::RED, 2);
+            
+            backLabel->setPosition(Vec2(origin.x + backLabel->getContentSize().width / 2,
+                                        origin.y + visibleSize.height - backLabel->getContentSize().height / 2) - Vec2(0, 10));
 
-    // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, NULL);
-    menu->setPosition(Vec2::ZERO);
-    this->addChild(menu, 1);
+            this->addChild(backLabel);
+            this->backLabel = backLabel;
+        }
+
 
     /////////////////////////////
     // 3. add your codes below...
@@ -172,38 +187,23 @@ bool MainScene::init()
     // add a label shows "Hello World"
     // create and initialize a label
 
-    auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
-    if (label == nullptr)
-    {
-        problemLoading("'fonts/Marker Felt.ttf'");
-    }
-    else
-    {
-        // position the label on the center of the screen
-        label->setPosition(
-            Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - label->getContentSize().height));
-
-        // add the label as a child to this layer
-        this->addChild(label, 1);
-    }
-    // add "HelloWorld" splash screen"
-    auto background = Sprite::create("bg_selection.jpg"sv);
-//    auto sprite = Sprite::create("disc.png"sv);
-    if(background)
-    {
-        // position the sprite on the center of the screen
-        center(background, origin, visibleSize);
-
-        // add the sprite as a child to this layer
-        this->addChild(background, 0);
-//        auto drawNode = DrawNode::create();
-//        drawNode->setPosition(Vec2(0, 0));
-//        addChild(drawNode);
+//    auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
+//    if (label == nullptr)
+//    {
+//        problemLoading("'fonts/Marker Felt.ttf'");
+//    }
+//    else
+//    {
+//        // position the label on the center of the screen
+//        label->setPosition(
+//            Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height - label->getContentSize().height));
 //
-//        drawNode->drawRect(safeArea.origin + Vec2(1, 1), safeArea.origin + safeArea.size, Color4B::BLUE);
-    } else {
-        problemLoading("background.");
-    }
+//        // add the label as a child to this layer
+//        this->addChild(label, 1);
+//    }
+    // add "HelloWorld" splash screen"
+    this->addChild(getBackground(), 0);
+    
     
     auto board = Sprite::create("board_front.png"sv);
     if(board){
@@ -248,6 +248,11 @@ void MainScene::onMouseDown(Event* event) {
     auto mouseWindowPosition = e->getLocationInView();
     auto mouseScenePosition = this->convertToNodeSpace(mouseWindowPosition);
     placeDiscAt(mouseScenePosition); // if you want to check for success, you can equality check with DISC_PLACED
+    
+    if(backLabel && backLabel->getBoundingBox().containsPoint(e->getLocation())) {
+        auto loadScene = utils::createInstance<LoadScreen>();
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, loadScene));
+    }
 }
 
 void MainScene::onMouseUp(Event* event)

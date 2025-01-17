@@ -36,6 +36,7 @@ int checkAlignment(GameBoard& gb, int row, int col, int dRow, int dCol) {
         return std::pow(100, alignmentCount - 1) * -1 * piece;
                                                 // ^ this should be variable based on user turn
     }
+    
 
     return 0;
 }
@@ -113,8 +114,7 @@ int BotPlayer::askBot() {
 void BotPlayer::onMouseDown(ax::Event* event){
     if(gameBoard.getCurrentTurn() == USER_TURN) {
         MainScene::onMouseDown(event);
-        
-        if(!gameBoard.isGameOver()){
+        if(!gameBoard.isGameOver() && gameBoard.getCurrentTurn() != USER_TURN){
             std::thread botThread([this]() {
                 placeDisc(askBot());
             });
