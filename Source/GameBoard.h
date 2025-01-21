@@ -41,16 +41,18 @@ private:
     bool gameOver = false;
     
 public:
+    bool isDraw();
     std::array<std::pair<int, int>, 4> getWinningCoins();
     std::array<std::array<int, 6>, 7> game_board_map{0};
     bool isRedTurn();
     bool isValidMove(int);
     int makeMoveAndGetCol(int);
     void undoMove();
-    TURN swapTurn(TURN);
+    static TURN swapTurn(TURN);
     TURN getCurrentTurn();
     bool isGameOver();
     move getLastMove();
+    static const std::string stringFromTurn(TURN);
 
 };
 

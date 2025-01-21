@@ -7,6 +7,18 @@
 #include "GameBoard.h"
 #include<iostream>
 #include "axmol.h"
+
+const std::string GameBoard::stringFromTurn(TURN t) {
+    switch(t){
+        case RED:
+            return "Red";
+        case YELLOW:
+            return "Yellow";
+        case NONE:
+            return "None";
+    };
+}
+
 bool GameBoard::isRedTurn() {
     return currentTurn == RED;
 }
@@ -135,4 +147,10 @@ void GameBoard::validateBoard() {
             }
         }
     }
+    
+    gameOver = isDraw();
+}
+
+bool GameBoard::isDraw() {
+    return movesDone.size() == 6*7;
 }
