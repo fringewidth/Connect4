@@ -7,7 +7,6 @@
 
 using namespace ax;
 
-
 #ifndef __CONSTANTS_H__
 #define __CONSTANTS_H__
 
@@ -30,8 +29,8 @@ static void problemLoading(const char* filename)
         "MainScene.cpp\n");
 }
 
-static void center(Sprite *&background, const Vec2 &origin, const Vec2 &visibleSize) {
-    background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+static void center(Node* node, const Vec2 &origin, const Vec2 &visibleSize) {
+    node->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 }
 
 static Sprite* getBackground() {
@@ -45,6 +44,19 @@ static Sprite* getBackground() {
         
     }    // add the sprite as a child to this layer
     return background;
+}
+
+
+inline Label* centeredText(std::string text) {
+    auto centerLabel = Label::createWithTTF(text, "fonts/Marker Felt.ttf", FONT_SIZE);
+    if (centerLabel) {
+        // Add shadow effect to the label
+        centerLabel->enableOutline(Color4B::RED, 2);
+        
+        // Center the label on the screen
+        center(centerLabel, Director::getInstance()->getVisibleOrigin(), Director::getInstance()->getVisibleSize());
+    }
+    return centerLabel;
 }
 
 

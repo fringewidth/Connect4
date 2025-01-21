@@ -6,18 +6,18 @@
 //
 #ifndef __BOT_PLAYER_SERVER_H__
 #define __BOT_PLAYER_SERVER_H__
-
 #include "BotPlayer.h"
 #include "WebSocketClient.h"
+#include "ServerScreen.h"
 
 class BotPlayerServer : public BotPlayer {
 public:
-    WebSocketClient wsClient;
+    WebSocketClient& wsClient;
     Message lastMessage;
     
     
     BotPlayerServer();
-
+    
     virtual int askBot() override;
 };
 

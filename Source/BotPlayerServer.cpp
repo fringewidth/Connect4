@@ -3,14 +3,17 @@
 //  Connect4
 //
 //  Created by Hrishik Sai Bojnal on 10/01/25.
-//
+///Users/hrishik/Downloads/Connect4/BotServerScreen.cpp
 
 #include "BotPlayerServer.h"
 #include <thread>
 #include <chrono>
+#include "WebSocketClient.h"
 
 BotPlayerServer::BotPlayerServer()
-: wsClient("localhost", "8080"), lastMessage({-1, -1}) {}
+: lastMessage({-1, -1}), wsClient(WebSocketClient::getInstance("", "")) {
+    AXLOG("BotPlayerServer Called.");
+}
 
 
 int BotPlayerServer::askBot() {
