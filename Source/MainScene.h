@@ -28,6 +28,50 @@
 
 #include "axmol.h"
 #include "GameBoard.h"
+#include "constants.h"
+
+class EndScreen : public Layer {
+    Label* overLabel;
+
+public:
+    virtual bool init() override {
+        auto background = getBackground();
+        overLabel = centeredText("Game Over!");
+
+        if (background && overLabel) {
+            this->addChild(background);
+            this->addChild(overLabel);
+        } else {
+            
+            AXLOG("Error initializing EndScreen: Background or overLabel creation failed.");
+            return false;
+        }
+        return true;
+    }
+
+    
+    void setLabelText(const std::string& text) {
+        if (overLabel) {
+            overLabel->setString(text);  
+        } else {
+            AXLOG("Error: overLabel is null in setLabelText.");
+        }
+    }
+
+    
+    static EndScreen* create() {
+        EndScreen* ret = new (std::nothrow) EndScreen();
+        if (ret && ret->init()) {
+            ret->autorelease();  
+            return ret;
+        } else {
+            delete ret; 
+            return nullptr;
+        }
+    }
+};
+
+
 
 class MainScene : public ax::Scene {
 private:
@@ -78,7 +122,11 @@ public:
     ax::Sprite* getDisc(TURN, bool);
     void signalGameOver();
     ax::Rect getRect(TURN);
-    void glowUp(int, int, TURN);
+    void glowUp(int, int, TURN, const std::function<void()>&);
+    
+    void showGameOverScreen(TURN);
+    
+    void signalDraw();
 
 };
 

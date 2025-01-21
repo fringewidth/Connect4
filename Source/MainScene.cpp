@@ -2,6 +2,8 @@
 #include "constants.h"
 #include "LoadScreen.h"
 #include <boost/asio.hpp>
+#include "GameBoard.h"
+#include <memory>
 
 using namespace ax;
 
@@ -29,7 +31,7 @@ Sprite* MainScene::getDisc(TURN color, bool glowing=false) {
     return Sprite::create(fileName, rect);
 }
 
-void MainScene::glowUp(int up, int right, TURN winner) {
+void MainScene::glowUp(int up, int right, TURN winner, const std::function<void()>& callback) {
     auto glow = getDisc(winner, true);
     auto boardCoords = getBoardCoords(right, up);
     
@@ -37,7 +39,12 @@ void MainScene::glowUp(int up, int right, TURN winner) {
         glow->setScale(SCALE);
         glow->setPosition(boardCoords);
         glow->setLocalZOrder(10);
-        Sequence* seq = Sequence::create(Hide::create(), DelayTime::create(0.9), Blink::create(1.0, 4), NULL);
+        Sequence* seq = Sequence::create(Hide::create(),
+                                         DelayTime::create(0.9),
+                                         Blink::create(1.0, 4),
+                                         CallFunc::create(callback),
+                                         NULL
+                                        );
         glow->runAction(seq);
         this->addChild(glow);
 
@@ -46,11 +53,35 @@ void MainScene::glowUp(int up, int right, TURN winner) {
 //    auto coinGlow = Sprite::create("glows.png"sv, )
 }
 
+void showEndScreen(Scene* scene, std::string message) {
+    auto endScreen = EndScreen::create();
+    endScreen->setLabelText(message);
+    scene->addChild(endScreen, 10);
+}
+
+void MainScene::signalDraw() {
+    showEndScreen(this, "It's a draw!");
+}
+
+
 void MainScene::signalGameOver() {
     auto winner = gameBoard.getCurrentTurn();
-    for(auto coinCoords : gameBoard.getWinningCoins()){
-        glowUp(coinCoords.first, coinCoords.second, winner);
+    auto gameOverShown = std::make_shared<bool>(false);
+
+    for (auto coinCoords : gameBoard.getWinningCoins()) {
+        glowUp(coinCoords.first, coinCoords.second, winner, [this, winner, gameOverShown]() {
+            if (!(*gameOverShown)) {
+                *gameOverShown = true;
+                this->showGameOverScreen(winner);
+            }
+        });
     }
+}
+
+
+void MainScene::showGameOverScreen(TURN loser) {
+    TURN winner = GameBoard::swapTurn(loser); // it just works idk bro.
+    showEndScreen(this, GameBoard::stringFromTurn(winner) + " Wins!");
 }
 
 // returns 1 for failure, 0 for success.
@@ -75,7 +106,8 @@ int MainScene::placeDisc(int right){
         disc->runAction(seq);
         this->addChild(disc, 1);
         if(gameBoard.isGameOver()) {
-            signalGameOver();
+            if(gameBoard.isDraw()) signalDraw();
+            else signalGameOver();
         }
         return DISC_PLACED;
     }
@@ -110,12 +142,7 @@ bool MainScene::init()
     }
 
     AXLOG("Scene initialized successfully!");
-    //////////////////////////////
-    // 1. super init first
-    if (!Scene::init())
-    {
-        return false;
-    }
+
 
     auto visibleSize = _director->getVisibleSize();
     auto origin = _director->getVisibleOrigin();
@@ -153,9 +180,9 @@ bool MainScene::init()
             backLabel->enableOutline(Color4B::RED, 2);
             
             backLabel->setPosition(Vec2(origin.x + backLabel->getContentSize().width / 2,
-                                        origin.y + visibleSize.height - backLabel->getContentSize().height / 2) - Vec2(0, 10));
+                                        origin.y + visibleSize.height - backLabel->getContentSize().height / 2) - Vec2(-10, 10));
 
-            this->addChild(backLabel);
+            this->addChild(backLabel, 100);
             this->backLabel = backLabel;
         }
 
