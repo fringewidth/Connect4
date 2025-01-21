@@ -8,6 +8,11 @@
 #include <boost/json/src.hpp>
 #include <iostream>
 #include "axmol.h"
+#include <memory>
+
+
+std::unique_ptr<WebSocketClient> WebSocketClient::instance = nullptr;
+
 
 WebSocketClient::WebSocketClient(const std::string& host, const std::string& port)
     : host(host), port(port), ws(io_context) {
@@ -21,6 +26,17 @@ WebSocketClient::~WebSocketClient() {
     } catch (const std::exception& e) {
         std::cerr << "Error closing WebSocket: " << e.what() << std::endl;
     }
+}
+
+WebSocketClient& WebSocketClient::getInstance(const std::string& host="", const std::string& port="") {
+    if(instance == nullptr) {
+        if (host == "" || port == "") {
+            throw std::runtime_error("Host and port must be specified at the first init");
+        }
+        instance = std::make_unique<WebSocketClient>(host, port);
+    }
+    
+    return *instance;
 }
 
 void WebSocketClient::connect() {

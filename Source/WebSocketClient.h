@@ -15,20 +15,30 @@
 #include <thread>
 #include <utility>
 #include <mutex>
+#include <memory>
 
 struct Message {
     int lastMove;
     long long timestamp;
 };
 
-class WebSocketClient {
+class WebSocketClient { // will be a singleton
     boost::asio::io_context io_context;
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws;
     std::string host;
     std::string port;
     
 public:
-    WebSocketClient(const std::string& host, const std::string& port);
+    WebSocketClient(const std::string& host, const std::string& port); // public ctor, need fix
+    WebSocketClient(const WebSocketClient&) = delete;
+    WebSocketClient& operator=(const WebSocketClient&) = delete;
+    
+    
+    static std::unique_ptr<WebSocketClient> instance;
+
+    
+    
+    static WebSocketClient& getInstance(const std::string& host, const std::string& port);
     
     std::mutex messageMutex;
     ~WebSocketClient();
