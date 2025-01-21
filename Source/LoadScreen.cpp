@@ -1,9 +1,11 @@
+
 #include "LoadScreen.h"
 #include "constants.h"
 #include "MainScene.h"
 #include "BotPlayer.h"
 #include "BotPlayerServer.h"
-
+#include "BotServerScreen.h"
+#include "ConnectingScreen.h"
 
 using namespace ax;
 
@@ -28,6 +30,7 @@ bool LoadScreen::init()
     auto playWithPhoneLabel = Label::createWithTTF("Play with Your Phone", "fonts/Marker Felt.ttf", FONT_SIZE);
     auto playWithServerLabel = Label::createWithTTF("Play with the Server", "fonts/Marker Felt.ttf", FONT_SIZE);
     
+    
     // Check if labels are created successfully
     if (playWithYourselfLabel && playWithPhoneLabel && playWithServerLabel)
     {
@@ -46,15 +49,15 @@ bool LoadScreen::init()
 
 
         // Add labels to the scene
-        this->addChild(playWithYourselfLabel);
-        this->addChild(playWithPhoneLabel);
-        this->addChild(playWithServerLabel);
+        this->addChild(playWithYourselfLabel, 3);
+        this->addChild(playWithPhoneLabel, 3);
+        this->addChild(playWithServerLabel, 3);
 
         // Create mouse listener
         auto mouseListener = EventListenerMouse::create();
         
         // Event handler for mouse down
-        mouseListener->onMouseDown = [playWithYourselfLabel, playWithPhoneLabel, playWithServerLabel](EventMouse* event) {
+        mouseListener->onMouseDown = [playWithYourselfLabel, playWithPhoneLabel, playWithServerLabel, this](EventMouse* event) {
             Vec2 mouseLocation = event->getLocation();
 
             // Check if each label is clicked
@@ -63,7 +66,7 @@ bool LoadScreen::init()
                 auto scene = utils::createInstance<MainScene>();
                 if (scene) {
                     AXLOG("MainScene created successfully.");
-                    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+                    Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
                 } else {
                     AXLOG("Failed to create MainScene.");
                 }
@@ -73,20 +76,22 @@ bool LoadScreen::init()
                 auto scene = utils::createInstance<BotPlayer>();
                 if (scene) {
                     AXLOG("BotPlayer created successfully.");
-                    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+                    Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
                 } else {
                     AXLOG("Failed to create BotPlayer.");
                 }
             }
             else if (playWithServerLabel->getBoundingBox().containsPoint(mouseLocation)) {
-                AXLOG("Attempting to create BotPlayerServer...");
-                auto scene = utils::createInstance<BotPlayerServer>();
-                if (scene) {
-                    AXLOG("BotPlayerServer created successfully.");
-                    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
-                } else {
-                    AXLOG("Failed to create BotPlayerServer.");
-                }
+                AXLOG("Attempting to create BotServerScreen...");
+//                auto scene = utils::createInstance<BotServerScreen>();
+//                if (scene) {
+//                    Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
+//                } else {
+//                    AXLOG("Failed to create BotServerScreen.");
+//                }
+                
+                auto connectingScreen = ConnectingScreen::create();
+                addChild(connectingScreen, 4);
             }
         };
 
@@ -245,3 +250,5 @@ void LoadScreen::menuCloseCallback(ax::Object* sender)
      // EventCustom customEndEvent("game_scene_close_event");
      //_eventDispatcher->dispatchEvent(&customEndEvent);
 }
+
+
