@@ -20,6 +20,11 @@ WebSocketClient::WebSocketClient(const std::string& host, const std::string& por
     listen();
 }
 
+void WebSocketClient::reset() {
+    ws.close(boost::beast::websocket::close_code::going_away);
+    instance.reset();
+}
+
 WebSocketClient::~WebSocketClient() {
     try {
         ws.close(boost::beast::websocket::close_code::normal);
@@ -50,28 +55,7 @@ void WebSocketClient::connect() {
     }
 }
 
-void WebSocketClient::listen() {
-//    std::thread([this]() {
-//        while (true) {
-//            try {
-//                boost::beast::flat_buffer buffer;
-//                ws.read(buffer);
-//                auto data = buffer.data();
-//                std::string receivedString(static_cast<const char*>(data.data()), data.size());
-//                
-//                auto receivedJSON = boost::json::parse(receivedString);
-//                Message message{
-//                    static_cast<int>(receivedJSON.at("lastMove").as_int64()),
-//                    receivedJSON.at("timestamp").as_int64()
-//                };
-//                std::lock_guard<std::mutex> lock(messageMutex);
-//                lastReceivedMessage = message;
-//            } catch (const std::exception& e) {
-//                std::cerr << "Error reading message: " << e.what() << std::endl;
-//            }
-//        }
-//    }).detach();
-}
+void WebSocketClient::listen() {}
 
 Message WebSocketClient::getLastMessage() {
 //    std::lock_guard<std::mutex> lock(messageMutex);

@@ -23,8 +23,6 @@ public:
             AXLOG("Failed to load background.");
         }
         
-        // Create the label
-            // Add the label to the scene
         auto centerLabel = centeredText("Connecting to Server...");
         if(centerLabel) {
             this->addChild(centerLabel);
@@ -33,12 +31,10 @@ public:
             return false;
         }
 
-        // Attempt to create the WebSocket client
         try {
-            WebSocketClient::getInstance("localhost", "8080"); // Replace with actual server info
-            Director::getInstance()->replaceScene(utils::createInstance<BotPlayerServer>());
+            WebSocketClient::getInstance("localhost", "8080");
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
         } catch (const std::runtime_error& e) {
-            // Handle the error and update the label with the failure message
             updateLabel(centerLabel, "Server Unavailable :(");
             auto wait = ax::DelayTime::create(1.0f);
             auto removeSelf = ax::RemoveSelf::create();
@@ -52,16 +48,15 @@ public:
     static ConnectingScreen* create() {
         ConnectingScreen* ret = new (std::nothrow) ConnectingScreen();
         if (ret && ret->init()) {
-            ret->autorelease();  // Add to autorelease pool
+            ret->autorelease();
             return ret;
         } else {
-            delete ret; // Clean up if creation failed
+            delete ret;
             return nullptr;
         }
     }
 
 private:
-    // Helper method to update the label text
     void updateLabel(Label* label, const std::string& newMessage) {
         if (label) {
             label->setString(newMessage);

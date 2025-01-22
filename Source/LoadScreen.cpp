@@ -9,12 +9,8 @@
 
 using namespace ax;
 
-
-// on "init" you need to initialize your instance
 bool LoadScreen::init()
 {
-    //////////////////////////////
-    // 1. super init first
     if (!Scene::init())
     {
         return false;
@@ -25,43 +21,33 @@ bool LoadScreen::init()
     auto safeArea = _director->getSafeAreaRect();
     auto safeOrigin = safeArea.origin;
 
-    // Create the three labels
-    auto playWithYourselfLabel = Label::createWithTTF("Play with Yourself", "fonts/Marker Felt.ttf", FONT_SIZE);
-    auto playWithPhoneLabel = Label::createWithTTF("Play with Your Phone", "fonts/Marker Felt.ttf", FONT_SIZE);
-    auto playWithServerLabel = Label::createWithTTF("Play with the Server", "fonts/Marker Felt.ttf", FONT_SIZE);
+    std::vector<float> positions = {0.8, 0.6, 0.4, 0.2};
+    std::vector<std::string> texts = {
+        "Play with Yourself",
+        "Play with Your Phone",
+        "Play with the Server",
+        "Play Online"
+    };
+    std::vector<Label*> labels(4);
     
-    
-    // Check if labels are created successfully
-    if (playWithYourselfLabel && playWithPhoneLabel && playWithServerLabel)
-    {
-        // Add shadow effect to each label
-        playWithYourselfLabel->enableOutline(Color4B::RED, 2);
-        playWithPhoneLabel->enableOutline(Color4B::RED, 2);
-        playWithServerLabel->enableOutline(Color4B::RED, 2);
+    for (size_t i = 0; i < texts.size(); ++i) {
+        Vec2 position(visibleSize.width / 2, visibleSize.height * positions[i]);
+        auto label = createStyledLabel(texts[i], position);
+        if (label) {
+            this->addChild(label, 3);
+            labels[i] = label;
+        } else {
+            AXLOG("Failed to create labels.");
+            return false;
+        }
+    }
 
-
-        // Set positions (center vertically and spaced horizontally)
-        playWithYourselfLabel->setPosition(visibleSize.width / 2, visibleSize.height * 0.75);
-        playWithPhoneLabel->setPosition(visibleSize.width / 2, visibleSize.height * 0.5);
-        playWithServerLabel->setPosition(visibleSize.width / 2, visibleSize.height * 0.25);
+    auto mouseListener = EventListenerMouse::create();
         
-        
+    mouseListener->onMouseDown = [labels, this](EventMouse* event) {
+        Vec2 mouseLocation = event->getLocation();
 
-
-        // Add labels to the scene
-        this->addChild(playWithYourselfLabel, 3);
-        this->addChild(playWithPhoneLabel, 3);
-        this->addChild(playWithServerLabel, 3);
-
-        // Create mouse listener
-        auto mouseListener = EventListenerMouse::create();
-        
-        // Event handler for mouse down
-        mouseListener->onMouseDown = [playWithYourselfLabel, playWithPhoneLabel, playWithServerLabel, this](EventMouse* event) {
-            Vec2 mouseLocation = event->getLocation();
-
-            // Check if each label is clicked
-            if (playWithYourselfLabel->getBoundingBox().containsPoint(mouseLocation)) {
+        if (isPointIn(labels[0], mouseLocation)) { // play with yourself
                 AXLOG("Attempting to create MainScene...");
                 auto scene = utils::createInstance<MainScene>();
                 if (scene) {
@@ -71,50 +57,36 @@ bool LoadScreen::init()
                     AXLOG("Failed to create MainScene.");
                 }
             }
-            else if (playWithPhoneLabel->getBoundingBox().containsPoint(mouseLocation)) {
+            
+            
+        else if (isPointIn(labels[1], mouseLocation)) { // play with bot
                 AXLOG("Attempting to create BotPlayer...");
                 auto scene = utils::createInstance<BotPlayer>();
                 if (scene) {
                     AXLOG("BotPlayer created successfully.");
                     Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
                 } else {
-                    AXLOG("Failed to create BotPlayer.");
+                        AXLOG("Failed to create BotPlayer.");
                 }
             }
-            else if (playWithServerLabel->getBoundingBox().containsPoint(mouseLocation)) {
-                AXLOG("Attempting to create BotServerScreen...");
-//                auto scene = utils::createInstance<BotServerScreen>();
-//                if (scene) {
-//                    Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
-//                } else {
-//                    AXLOG("Failed to create BotServerScreen.");
-//                }
-                
+            
+            
+        else if (isPointIn(labels[2], mouseLocation)) { // play with server
+            AXLOG("Attempting to create BotServerScreen...");
+
                 auto connectingScreen = ConnectingScreen::create();
-                addChild(connectingScreen, 4);
-            }
-        };
+            addChild(connectingScreen, 4);
+        }
+        
+        else if (isPointIn(labels[3], mouseLocation)) {
+            
+        }
+    };
 
-        // Register the event listener
-        _eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
-
-    } else {
-        AXLOG("Failed to create labels.");
-        return false; // Early return if labels couldn't be created.
-    }
-
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
     
     this->addChild(getBackground(), 0);
-//        auto drawNode = DrawNode::create();
-//        drawNode->setPosition(Vec2(0, 0));
-//        addChild(drawNode);
-//
-//        drawNode->drawRect(safeArea.origin + Vec2(1, 1), safeArea.origin + safeArea.size, Color4B::BLUE);
-    
-    
-    
-    
-    // scheduleUpdate() is required to ensure update(float) is called on every loop
+
     scheduleUpdate();
 
     return true;
