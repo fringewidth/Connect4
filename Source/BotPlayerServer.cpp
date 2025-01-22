@@ -31,3 +31,7 @@ int BotPlayerServer::askBot() {
     }
 }
 
+BotPlayerServer::~BotPlayerServer() {
+    wsClient.reset();
+}
+

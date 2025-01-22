@@ -15,9 +15,8 @@ public:
     WebSocketClient& wsClient;
     Message lastMessage;
     
-    
     BotPlayerServer();
-    
+    ~BotPlayerServer();
     virtual int askBot() override;
 };
 

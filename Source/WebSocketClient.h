@@ -46,6 +46,9 @@ public:
     void listen();
     void connect();
     
+    void reset();
+
+    
     Message getLastMessage();
     
     void sendMove(int);
