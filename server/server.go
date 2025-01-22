@@ -1,7 +1,6 @@
 package main
 
 import (
-	gameBoard "Connect4Server/game-board"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,65 +8,71 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Message struct {
-	LastMove  int   `json:"lastMove"`
-	Timestamp int64 `json:"timestamp"`
-}
+const (
+	ModeBot    = "BOT"
+	ModePerson = "PERSON"
+)
+
+type Opponent int
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
-func main() {
-	http.HandleFunc("/", handleFunc)
-	fmt.Println("Server started on port 8080.")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Println("Error starting server:", err)
+var waitingQueue = make(chan *Client, 100)
+
+func handleWaitingQueue() {
+	client1 := <-waitingQueue
+	select {
+	case client2 := <-waitingQueue:
+		go createGame(client1, client2)
+		break
+	case <-time.After(10 * time.Second):
+		client1.sendOutcome(REJECT, -1)
 	}
-}
-
-func closeConnection(conn *websocket.Conn) {
-	fmt.Println("Closed connection.")
-	conn.Close()
 }
 
 func handleFunc(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Waiting for client connection")
+	fmt.Println("Request received. Upgrading to socket...")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Error upgrading connection:", err)
+		fmt.Println("Error with upgrading.")
 		return
 	}
-	defer closeConnection(conn)
 
-	fmt.Println("Client connected")
-	var gb gameBoard.GameBoard
-	gb.Init()
+	client := &Client{}
+	client.create(conn)
 
-	for {
-		fmt.Println("Awaiting user message...")
-		var userMove Message
-		if err := conn.ReadJSON(&userMove); err != nil {
-			fmt.Println("Error while reading user JSON.")
-		}
-		fmt.Printf("User move received: %d\n", userMove.LastMove)
-		gb.MakeMove(userMove.LastMove)
-		fmt.Println("Thinking...")
-		botMove := askBot(&gb)
-		gb.MakeMove(botMove)
-		timestamp := time.Now().UnixMilli()
+	var msg map[string]string
 
-		returnMessage := Message{LastMove: botMove, Timestamp: timestamp}
+	if err := conn.ReadJSON(&msg); err != nil {
+		fmt.Println("Error reading init message:", err)
+		client.closeConnection()
+		return
+	}
 
-		fmt.Printf("Move: %d, Timestamp: %d\n", botMove, timestamp)
-		if err := conn.WriteJSON(returnMessage); err != nil {
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
-				fmt.Println("Connection closed by user.")
-				return
-			}
-			fmt.Println("error while closing connection.")
-			return
-		}
+	mode, ok := msg["mode"]
+	if !ok || (mode != ModeBot && mode != ModePerson) {
+		fmt.Println("Invalid mode in init message.")
+		client.closeConnection()
+		return
+	}
 
+	switch msg["mode"] {
+	case ModeBot:
+		go botRoom(client)
+	case ModePerson:
+		waitingQueue <- client
+	}
+}
+
+func main() {
+	go handleWaitingQueue()
+	http.HandleFunc("/", handleFunc)
+	fmt.Println("Sever ready on localhost:8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println("Scratch that. Error in starting server")
 	}
 }
