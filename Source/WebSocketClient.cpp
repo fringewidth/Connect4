@@ -67,40 +67,42 @@ bool WebSocketClient::initializeConnection(GAME_TYPE gameType) { // returns if c
     try {
         boost::json::object initMessage;
         initMessage["type"] = "init";
-
+        std::string messageString = "";
         if (gameType == GAME_TYPE::SERVER_BOT) {
             initMessage["mode"] = "BOT";
-            std::string messageString = boost::json::serialize(initMessage);
-            ws.write(boost::asio::buffer(messageString));
-
-            return true;
+            messageString = boost::json::serialize(initMessage);
         } else if (gameType == GAME_TYPE::SERVER_PERSON) {
             initMessage["mode"] = "PERSON";
-
-            std::string messageString = boost::json::serialize(initMessage);
-            ws.write(boost::asio::buffer(messageString));
-
-            boost::beast::flat_buffer buffer;
-            ws.read(buffer);
-
-            auto data = buffer.data();
-            std::string responseString(static_cast<const char*>(data.data()), data.size());
-            auto responseJSON = boost::json::parse(responseString).as_object();
-
-            if (responseJSON["type"].as_string() == "timeout") {
-                throw std::runtime_error("No one on the other side :(");
-            } else if (responseJSON["type"].as_string() == "accept") {
-                int order = std::stoi(std::string(responseJSON["order"].as_string()));
-                AXLOG("Game accepted. Order: %d", order);
-                return (order == 0);
-            } else {
-                throw std::runtime_error("Unexpected server response");
-            }
+            messageString = boost::json::serialize(initMessage);
         }
+        ws.write(boost::asio::buffer(messageString));
+
+        boost::beast::flat_buffer buffer;
+        ws.read(buffer);
+        auto data = buffer.data();
+        std::string responseString(static_cast<const char*>(data.data()), data.size());
+        auto responseJSON = boost::json::parse(responseString).as_object();
+
+        if (responseJSON["type"].as_string() == "timeout") {
+            throw std::runtime_error("No one on the other side :(");
+        } // only happens when mode is person
+        
+        else if (responseJSON["type"].as_string() == "accept") {
+            int order = std::stoi(std::string(responseJSON["order"].as_string()));
+            AXLOG("Game accepted. Order: %d", order);
+            return (order == 0);
+        }
+        
+        
+        else {
+            throw std::runtime_error("Unexpected server response");
+        }
+        
     } catch (const std::exception& e) {
         throw std::runtime_error(std::string("Initialization failed: \n") + e.what());
     }
-    return false;
+    
+    return false; // dead code
 }
 
 void WebSocketClient::connect() {

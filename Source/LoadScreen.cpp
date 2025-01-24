@@ -9,6 +9,12 @@
 
 using namespace ax;
 
+static void loadConnectingScreen(LoadScreen &object, GAME_TYPE gt) {
+    auto connectingScreen = ConnectingScreen::create();
+    object.addChild(connectingScreen, 4);
+    connectingScreen->setGameAndLoad(gt);
+}
+
 bool LoadScreen::init()
 {
     if (!Scene::init())
@@ -72,12 +78,11 @@ bool LoadScreen::init()
             
             
         else if (isPointIn(labels[2], mouseLocation)) { // play with server
-            auto connectingScreen = ConnectingScreen::create();
-            addChild(connectingScreen, 4);
+            loadConnectingScreen(*this, GAME_TYPE::SERVER_BOT);
         }
         
         else if (isPointIn(labels[3], mouseLocation)) { // play online
-            
+            loadConnectingScreen(*this, GAME_TYPE::SERVER_PERSON);
         }
     };
 

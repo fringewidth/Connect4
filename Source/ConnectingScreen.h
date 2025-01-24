@@ -14,6 +14,22 @@ using namespace ax;
 
 class ConnectingScreen : public ax::Layer {
 public:
+    GAME_TYPE gType = GAME_TYPE::SERVER_BOT;
+    Label* centerLabel = nullptr;
+    void setGameAndLoad(GAME_TYPE gt) {
+        gType = gt;
+        try {
+            WebSocketClient::getInstance(SERVER_HOST, SERVER_PORT, gType);
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
+        } catch (const std::runtime_error& e) {
+            if(centerLabel) updateLabel(centerLabel, e.what());
+            auto wait = ax::DelayTime::create(1.0f);
+            auto removeSelf = ax::RemoveSelf::create();
+            auto seq = Sequence::create(wait, removeSelf, NULL);
+            this->runAction(seq);
+        }
+    }
+    
     virtual bool init() override {
         // Create background
         auto background = getBackground();
@@ -23,23 +39,12 @@ public:
             AXLOG("Failed to load background.");
         }
         
-        auto centerLabel = centeredText("Connecting to Server...");
+        centerLabel = centeredText("Connecting to Server...");
         if(centerLabel) {
             this->addChild(centerLabel);
         } else {
             AXLOG("Failed to create label.");
             return false;
-        }
-
-        try {
-            WebSocketClient::getInstance("localhost", "8080", GAME_TYPE::SERVER_BOT);
-            Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
-        } catch (const std::runtime_error& e) {
-            updateLabel(centerLabel, e.what());
-            auto wait = ax::DelayTime::create(1.0f);
-            auto removeSelf = ax::RemoveSelf::create();
-            auto seq = Sequence::create(wait, removeSelf, NULL);
-            this->runAction(seq);
         }
 
         return true; // Make sure to return true if initialization succeeds

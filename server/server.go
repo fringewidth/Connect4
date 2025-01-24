@@ -24,13 +24,19 @@ var upgrader = websocket.Upgrader{
 var waitingQueue = make(chan *Client, 100)
 
 func handleWaitingQueue() {
-	client1 := <-waitingQueue
-	select {
-	case client2 := <-waitingQueue:
-		go createGame(client1, client2)
-		break
-	case <-time.After(10 * time.Second):
-		client1.sendOutcome(REJECT, -1)
+	for {
+		client1 := <-waitingQueue
+		fmt.Println("added client1 to waiting queue")
+		select {
+		case client2 := <-waitingQueue:
+			fmt.Println("found a match!")
+			client1.sendOutcome(ACCEPT, 0)
+			client2.sendOutcome(ACCEPT, 1)
+			go createGame(client1, client2)
+		case <-time.After(10 * time.Second):
+			fmt.Println("timeout!")
+			client1.sendOutcome(REJECT, -1)
+		}
 	}
 }
 
@@ -62,8 +68,10 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 
 	switch msg["mode"] {
 	case ModeBot:
+		client.sendOutcome(ACCEPT, 0)
 		go botRoom(client)
 	case ModePerson:
+		fmt.Println("Client wants a person. Adding to waiting queue.")
 		waitingQueue <- client
 	}
 }

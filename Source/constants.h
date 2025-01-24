@@ -19,6 +19,9 @@ auto const DISC_PLACED = 0;
 auto const DISC_UNPLACED = 1;
 auto const FONT_SIZE = 40;
 
+auto const SERVER_HOST = "localhost";
+auto const SERVER_PORT = "8080";
+
 
 inline static void problemLoading(const char* filename)
 {

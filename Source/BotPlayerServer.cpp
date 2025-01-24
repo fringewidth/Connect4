@@ -18,13 +18,11 @@ BotPlayerServer::BotPlayerServer()
 
 int BotPlayerServer::askBot() {
     int userMove = gameBoard.getLastMove().row;
-
     if(gameBoard.isGameOver()) {
         wsClient.sendMove(userMove); // let it know game over
         return -1;
     }
     AXLOG("User move sent: %d", userMove);
-    
     Message currentMessage = wsClient.sendMove(userMove);
     return currentMessage.lastMove;
 }

@@ -95,7 +95,7 @@ public:
     void onTouchesEnded(const std::vector<ax::Touch*>& touches, ax::Event* event);
     
     // mouse
-    virtual void onMouseDown(ax::Event* event);
+    void onMouseDown(ax::Event* event);
     void onMouseUp(ax::Event* event);
     void onMouseMove(ax::Event* event);
     void onMouseScroll(ax::Event* event);
@@ -117,7 +117,7 @@ private:
 public:
     GameBoard gameBoard;
     int placeDisc(int);
-    int placeDiscAt(ax::Vec2);
+    virtual int placeDiscAt(ax::Vec2);
     ax::Vec2 getBoardCoords(int, int);
     ax::Sprite* getDisc(TURN, bool);
     void signalGameOver();

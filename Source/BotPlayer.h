@@ -12,10 +12,13 @@
 #include "MoveScore.h"
 
 class BotPlayer : public MainScene {
-    void onMouseDown(ax::Event* event) override;
+//    void onMouseDown(ax::Event* event) override;
+    bool myTurn = true;
+    virtual int placeDiscAt(ax::Vec2) override;
     virtual int askBot();
-    std::mutex botMutex; 
-
+    std::mutex botMutex;
+    std::mutex turnMutex;
+    bool isBotActive = false;
 };
 
 #endif

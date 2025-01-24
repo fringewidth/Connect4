@@ -87,6 +87,7 @@ void MainScene::showGameOverScreen(TURN loser) {
 // returns 1 for failure, 0 for success.
 int MainScene::placeDisc(int right){
     if(!gameBoard.isValidMove(right)){
+        AXLOG("disc unplaced");
         return DISC_UNPLACED;
     }
     int up = gameBoard.makeMoveAndGetCol(right);
@@ -123,9 +124,9 @@ int MainScene::placeDisc(int right){
 int MainScene::placeDiscAt(Vec2 sceneCoords) {
     int columnIndex = std::round((sceneCoords - DISC_ORIGIN).x/(94.4914 * SCALE)); // some issues with tuning the origin is causing this.
     AXLOG("move made: %d", columnIndex);
-    AXLOG("warning, havne't debugged when you click the last message -1 comes");
     if(columnIndex < 0 || columnIndex > 6){
-        return;
+        AXLOG("invalid out of bounds move");
+        return DISC_UNPLACED;
     }
     return this->placeDisc(columnIndex);
 }
