@@ -22,12 +22,20 @@ struct Message {
     long long timestamp;
 };
 
+enum class GAME_TYPE {
+    SERVER_BOT,
+    SERVER_PERSON
+};
+
 class WebSocketClient { // will be a singleton
     boost::asio::io_context io_context;
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws;
     std::string host;
     std::string port;
     
+    bool initializeConnection(GAME_TYPE);
+
+
 public:
     WebSocketClient(const std::string& host, const std::string& port); // public ctor, need fix
     WebSocketClient(const WebSocketClient&) = delete;
@@ -38,7 +46,8 @@ public:
 
     
     
-    static WebSocketClient& getInstance(const std::string& host, const std::string& port);
+    static WebSocketClient& getInstance(const std::string& host, const std::string& port, GAME_TYPE gameType);
+    static WebSocketClient& getInstance();
     
     std::mutex messageMutex;
     ~WebSocketClient();
@@ -51,7 +60,7 @@ public:
     
     Message getLastMessage();
     
-    void sendMove(int);
+    Message sendMove(int);
     
     Message lastReceivedMessage;
     

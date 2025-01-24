@@ -6,17 +6,17 @@
 //
 #ifndef __BOT_SERVER_SCREEN_H__
 #define __BOT_SERVER_SCREEN_H__
-#include "ServerScreen.h"
+#include "WebSocketClient.h"
+#include "ConnectingScreen.h"
 #include "WebSocketClient.h"
 
-class BotServerScreen : public ServerScreen {
-protected:
-//    std::string_view serverLoadingMessage;
-//    std::string_view errorMessage;
-
+class BotServerScreen : public ConnectingScreen {
 public:
-    BotServerScreen();
-//    bool init();
+    virtual void connectAndReplaceSelf() {
+        WebSocketClient::getInstance("localhost", "8080", GAME_TYPE::SERVER_BOT);
+
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
+    }
 };
 
 #endif

@@ -111,14 +111,18 @@ int BotPlayer::askBot() {
     return bestMove;
 }
 
-void BotPlayer::onMouseDown(ax::Event* event){
+void BotPlayer::onMouseDown(ax::Event* event) {
     if(gameBoard.getCurrentTurn() == USER_TURN) {
         MainScene::onMouseDown(event);
-        if(!gameBoard.isGameOver() && gameBoard.getCurrentTurn() != USER_TURN){
+        if (!gameBoard.isGameOver() && gameBoard.getCurrentTurn() != USER_TURN) {
+            std::lock_guard<std::mutex> lock(botMutex);  // ensure only one of these is spawned
+
             std::thread botThread([this]() {
                 placeDisc(askBot());
             });
+
             botThread.detach();
         }
     }
 }
+

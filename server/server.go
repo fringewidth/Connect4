@@ -71,7 +71,7 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 func main() {
 	go handleWaitingQueue()
 	http.HandleFunc("/", handleFunc)
-	fmt.Println("Sever ready on localhost:8080")
+	fmt.Println("Server ready on localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Scratch that. Error in starting server")
 	}

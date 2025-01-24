@@ -13,7 +13,9 @@
 
 class BotPlayer : public MainScene {
     void onMouseDown(ax::Event* event) override;
-    virtual int askBot();    
+    virtual int askBot();
+    std::mutex botMutex; 
+
 };
 
 #endif

@@ -2,6 +2,7 @@ package main
 
 import (
 	gameBoard "Connect4Server/game-board"
+	"fmt"
 	"math"
 )
 
@@ -106,6 +107,7 @@ func askBot(gb *gameBoard.GameBoard) int {
 		}
 		gb.UndoMove()
 	}
+	fmt.Println("Printing game board")
 	return bestMove
 }
 
@@ -116,14 +118,24 @@ func botRoom(c *Client) {
 
 	var gb gameBoard.GameBoard
 	gb.Init()
-	lastMove := c.getMove()
-	gb.MakeMove(lastMove)
-	if gb.IsGameOver() {
-		return
+
+	for !gb.IsGameOver() {
+		lastMove := c.getMove()
+		fmt.Printf("Got %d from user %d\n", lastMove, c.uid)
+		if !gb.IsValidMove(lastMove) {
+			fmt.Println("invalid move by user. closing connection...")
+			return
+		}
+		gb.MakeMove(lastMove)
+
+		if gb.IsGameOver() {
+			c.sendGameOver(true) // true : client won
+		}
+
+		botMove := askBot(&gb)
+		gb.MakeMove(botMove)
+		c.sendMove(botMove)
+		fmt.Printf("Attempting to send %d to user %d\n", botMove, c.uid)
 	}
-	botMove := askBot(&gb)
-	c.sendMove(botMove)
-	if gb.IsGameOver() {
-		return
-	}
+	c.sendGameOver(false) // server won
 }

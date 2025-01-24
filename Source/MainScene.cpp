@@ -122,6 +122,8 @@ int MainScene::placeDisc(int right){
 // returns 1 for success, zero for failure
 int MainScene::placeDiscAt(Vec2 sceneCoords) {
     int columnIndex = std::round((sceneCoords - DISC_ORIGIN).x/(94.4914 * SCALE)); // some issues with tuning the origin is causing this.
+    AXLOG("move made: %d", columnIndex);
+    AXLOG("warning, havne't debugged when you click the last message -1 comes");
     if(columnIndex < 0 || columnIndex > 6){
         return;
     }

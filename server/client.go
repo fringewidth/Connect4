@@ -25,6 +25,13 @@ type Client struct {
 	opponent int
 }
 
+func (c *Client) sendGameOver(winner bool) {
+	err := c.conn.WriteJSON(map[string]string{"type": "gameOver", "winner": fmt.Sprintf("%d", winner)})
+	if err != nil {
+		fmt.Println("Error sending gameover message.")
+	}
+}
+
 func (c *Client) sendOutcome(o Outcome, order int) {
 	var err error
 	switch o {
@@ -55,7 +62,7 @@ func (c *Client) create(conn *websocket.Conn) {
 
 func (c *Client) getMove() int {
 	var msg MoveMessage
-	if err := c.conn.ReadJSON(&msg); err != nil || msg.LastMove < 0 || msg.LastMove >= 6 {
+	if err := c.conn.ReadJSON(&msg); err != nil || msg.LastMove < 0 || msg.LastMove > 6 {
 		fmt.Println("Invalid move received by user with id:", c.uid)
 		return -1
 	}
@@ -63,8 +70,8 @@ func (c *Client) getMove() int {
 }
 
 func (c *Client) sendMove(move int) {
-	var returnMessage MoveMessage
-	returnMessage.newMessage(move)
+	returnMessage := newMessage(move)
+	fmt.Printf("Message to send: %+v\n", returnMessage)
 	if err := c.conn.WriteJSON(returnMessage); err != nil {
 		if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 			fmt.Println("Connection closed by user.")

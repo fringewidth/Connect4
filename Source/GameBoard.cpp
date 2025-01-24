@@ -29,7 +29,6 @@ std::array<std::pair<int, int>, 4> GameBoard::getWinningCoins() {
 }
 
 move GameBoard::getLastMove() {
-    
     return movesDone.top();
 }
 

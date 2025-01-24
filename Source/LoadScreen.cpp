@@ -72,13 +72,11 @@ bool LoadScreen::init()
             
             
         else if (isPointIn(labels[2], mouseLocation)) { // play with server
-            AXLOG("Attempting to create BotServerScreen...");
-
-                auto connectingScreen = ConnectingScreen::create();
+            auto connectingScreen = ConnectingScreen::create();
             addChild(connectingScreen, 4);
         }
         
-        else if (isPointIn(labels[3], mouseLocation)) {
+        else if (isPointIn(labels[3], mouseLocation)) { // play online
             
         }
     };

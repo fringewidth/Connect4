@@ -9,7 +9,7 @@
 #include "constants.h"
 #include "WebSocketClient.h"
 #include "BotPlayerServer.h"
-
+#pragma once
 using namespace ax;
 
 class ConnectingScreen : public ax::Layer {
@@ -32,10 +32,10 @@ public:
         }
 
         try {
-            WebSocketClient::getInstance("localhost", "8080");
+            WebSocketClient::getInstance("localhost", "8080", GAME_TYPE::SERVER_BOT);
             Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
         } catch (const std::runtime_error& e) {
-            updateLabel(centerLabel, "Server Unavailable :(");
+            updateLabel(centerLabel, e.what());
             auto wait = ax::DelayTime::create(1.0f);
             auto removeSelf = ax::RemoveSelf::create();
             auto seq = Sequence::create(wait, removeSelf, NULL);
