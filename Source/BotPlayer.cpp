@@ -93,6 +93,7 @@ int minimax(GameBoard& gb, int alpha, int beta, int depth, bool isMaximizing) {
 }
 
 int BotPlayer::askBot() {
+    if(gameBoard.isGameOver()) return -1;
     AXLOG("Asking bot...");
     int bestMove = -1;
     int bestScore = INT_MIN;
@@ -101,7 +102,7 @@ int BotPlayer::askBot() {
             continue;
         }
         gameBoard.makeMoveAndGetCol(col);
-        auto miniMaxScore = minimax(gameBoard, INT_MIN, INT_MAX, 7, false);
+        auto miniMaxScore = minimax(gameBoard, INT_MIN, INT_MAX, 5, false);
         if (miniMaxScore > bestScore){
             bestMove = col;
             bestScore = miniMaxScore;
@@ -133,4 +134,3 @@ int BotPlayer::placeDiscAt(ax::Vec2 coords) {
         }
     }
 }
-

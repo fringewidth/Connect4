@@ -9,6 +9,13 @@
 #define __LOAD_SCREEN_H__
 
 #include<axmol.h>
+#include "LoadScreen.h"
+#include "constants.h"
+#include "MainScene.h"
+#include "BotPlayer.h"
+#include "BotPlayerServer.h"
+#include "BotServerScreen.h"
+#include "ConnectingScreen.h"
 
 class LoadScreen : public ax::Scene {
 private:
@@ -49,6 +56,8 @@ public:
     
     void playCallBack();
     
+    
+    void loadConnectingScreen(GAME_TYPE);
 
 };
 

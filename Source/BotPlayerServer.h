@@ -18,6 +18,15 @@ public:
     BotPlayerServer();
     ~BotPlayerServer();
     virtual int askBot() override;
+    
+    void handleSecondTurn() {
+        if(!myTurn){
+            placeDisc(wsClient.receiveMove().lastMove);
+            myTurn = !myTurn;
+        }
+    }
+    
+    virtual void onBackPressed() override;
 };
 
 #endif

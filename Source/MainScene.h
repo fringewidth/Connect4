@@ -114,6 +114,7 @@ private:
     GameState _gameState = GameState::init;
     
     
+    
 public:
     GameBoard gameBoard;
     int placeDisc(int);
@@ -121,12 +122,17 @@ public:
     ax::Vec2 getBoardCoords(int, int);
     ax::Sprite* getDisc(TURN, bool);
     void signalGameOver();
+    void signalGameOver(bool forfeited);
     ax::Rect getRect(TURN);
     void glowUp(int, int, TURN, const std::function<void()>&);
     
     void showGameOverScreen(TURN);
     
     void signalDraw();
+    
+    virtual int askBot() {};
+    
+    virtual void onBackPressed(){};
 
 };
 

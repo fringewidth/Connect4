@@ -33,7 +33,7 @@ func handleWaitingQueue() {
 			client1.sendOutcome(ACCEPT, 0)
 			client2.sendOutcome(ACCEPT, 1)
 			go createGame(client1, client2)
-		case <-time.After(10 * time.Second):
+		case <-time.After(3 * time.Second):
 			fmt.Println("timeout!")
 			client1.sendOutcome(REJECT, -1)
 		}

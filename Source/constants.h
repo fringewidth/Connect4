@@ -19,8 +19,7 @@ auto const DISC_PLACED = 0;
 auto const DISC_UNPLACED = 1;
 auto const FONT_SIZE = 40;
 
-auto const SERVER_HOST = "localhost";
-auto const SERVER_PORT = "8080";
+auto const FORFEIT_CODE = -255;
 
 
 inline static void problemLoading(const char* filename)
@@ -61,7 +60,7 @@ inline Label* centeredText(std::string text) {
     auto centerLabel = createStyledLabel(text, Vec2{0,0});
     if (centerLabel) {
         
-        // Center the label on the screen
+        //center the label on the screen
         center(centerLabel, Director::getInstance()->getVisibleOrigin(), Director::getInstance()->getVisibleSize());
     }
     return centerLabel;

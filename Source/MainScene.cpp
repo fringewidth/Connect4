@@ -65,6 +65,7 @@ void MainScene::signalDraw() {
 
 
 void MainScene::signalGameOver() {
+    askBot();
     auto winner = gameBoard.getCurrentTurn();
     auto gameOverShown = std::make_shared<bool>(false);
 
@@ -78,6 +79,13 @@ void MainScene::signalGameOver() {
     }
 }
 
+void MainScene::signalGameOver(bool forfeited) {
+    auto winner = gameBoard.getCurrentTurn();
+    auto gameOverShown = std::make_shared<bool>(false);
+
+    this->showGameOverScreen(winner);
+}
+
 
 void MainScene::showGameOverScreen(TURN loser) {
     TURN winner = GameBoard::swapTurn(loser); // it just works idk bro.
@@ -86,6 +94,10 @@ void MainScene::showGameOverScreen(TURN loser) {
 
 // returns 1 for failure, 0 for success.
 int MainScene::placeDisc(int right){
+    if(right == FORFEIT_CODE) {
+        signalGameOver();
+        return;
+    }
     if(!gameBoard.isValidMove(right)){
         AXLOG("disc unplaced");
         return DISC_UNPLACED;
@@ -281,6 +293,7 @@ void MainScene::onMouseDown(Event* event) {
     
     if(backLabel && backLabel->getBoundingBox().containsPoint(e->getLocation())) {
         auto loadScene = utils::createInstance<LoadScreen>();
+        onBackPressed();
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, loadScene));
     }
 }

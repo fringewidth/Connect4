@@ -17,6 +17,9 @@
 #include <mutex>
 #include <memory>
 
+auto const SERVER_HOST = "localhost";
+auto const SERVER_PORT = "8080";
+
 struct Message {
     int lastMove;
     long long timestamp;
@@ -40,14 +43,17 @@ public:
     WebSocketClient(const std::string& host, const std::string& port); // public ctor, need fix
     WebSocketClient(const WebSocketClient&) = delete;
     WebSocketClient& operator=(const WebSocketClient&) = delete;
+//    void quitGame(){};
     
     
     static std::unique_ptr<WebSocketClient> instance;
+    
+    bool isFirst = true;
 
     
     
-    static WebSocketClient& getInstance(const std::string& host, const std::string& port, GAME_TYPE gameType);
-    static WebSocketClient& getInstance();
+    static WebSocketClient& getInstance(const std::string& host=SERVER_HOST, const std::string& port=SERVER_PORT, GAME_TYPE gameType=GAME_TYPE::SERVER_BOT);
+//    static WebSocketClient& getInstance();
     
     std::mutex messageMutex;
     ~WebSocketClient();
@@ -60,7 +66,8 @@ public:
     
     Message getLastMessage();
     
-    Message sendMove(int);
+    Message sendAndReceiveMove(int);
+    Message receiveMove();
     
     Message lastReceivedMessage;
     

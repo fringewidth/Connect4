@@ -9,29 +9,65 @@
 #include "constants.h"
 #include "WebSocketClient.h"
 #include "BotPlayerServer.h"
+#include <mutex>  // Include the mutex header
+
 #pragma once
 using namespace ax;
+
+
+static std::mutex gameMutex;
+
 
 class ConnectingScreen : public ax::Layer {
 public:
     GAME_TYPE gType = GAME_TYPE::SERVER_BOT;
     Label* centerLabel = nullptr;
+    
+
+//    void setGameAndLoad(GAME_TYPE gt) {
+//        std::lock_guard<std::mutex> lock(gameMutex);
+//
+//        gType = gt;
+//        try {
+//            WebSocketClient::getInstance(SERVER_HOST, SERVER_PORT, gType);
+//            auto nextScene = utils::createInstance<BotPlayerServer>();
+//            nextScene->myTurn = WebSocketClient::getInstance().isFirst;
+//            auto delay = DelayTime::create(0.5f);
+//            auto callback = CallFunc::create([nextScene]() {
+//                nextScene->handleSecondTurn();            });
+//            auto action = Sequence::create(delay, callback, nullptr);
+//            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, nextScene));
+//            nextScene->runAction(action);
+//
+//        } catch (std::runtime_error& e) {
+//            WebSocketClient::getInstance().reset();
+//            if(centerLabel) updateLabel(centerLabel, e.what());
+//            auto wait = ax::DelayTime::create(1.0f);
+//            auto removeSelf = ax::RemoveSelf::create();
+//            auto seq = Sequence::create(wait, removeSelf, NULL);
+//            this->runAction(seq);
+//        }
+//    }
+    
     void setGameAndLoad(GAME_TYPE gt) {
-        gType = gt;
-        try {
-            WebSocketClient::getInstance(SERVER_HOST, SERVER_PORT, gType);
-            Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
-        } catch (const std::runtime_error& e) {
-            if(centerLabel) updateLabel(centerLabel, e.what());
-            auto wait = ax::DelayTime::create(1.0f);
-            auto removeSelf = ax::RemoveSelf::create();
-            auto seq = Sequence::create(wait, removeSelf, NULL);
-            this->runAction(seq);
+            gType = gt;
+            try {
+                WebSocketClient::getInstance(SERVER_HOST, SERVER_PORT, gType);
+                auto nextScene = utils::createInstance<BotPlayerServer>();
+                nextScene->myTurn = WebSocketClient::getInstance().isFirst;
+                nextScene->handleSecondTurn();
+                Director::getInstance()->replaceScene(TransitionFade::create(0.5f,nextScene));
+            } catch (const std::runtime_error& e) {
+                if(centerLabel) updateLabel(centerLabel, e.what());
+                auto wait = ax::DelayTime::create(1.0f);
+                auto removeSelf = ax::RemoveSelf::create();
+                auto seq = Sequence::create(wait, removeSelf, NULL);
+                this->runAction(seq);
+            }
         }
-    }
     
     virtual bool init() override {
-        // Create background
+        // create background
         auto background = getBackground();
         if (background) {
             this->addChild(background);
@@ -47,7 +83,7 @@ public:
             return false;
         }
 
-        return true; // Make sure to return true if initialization succeeds
+        return true;
     }
 
     static ConnectingScreen* create() {

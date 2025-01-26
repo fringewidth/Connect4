@@ -9,10 +9,16 @@
 
 using namespace ax;
 
-static void loadConnectingScreen(LoadScreen &object, GAME_TYPE gt) {
+void LoadScreen::loadConnectingScreen(GAME_TYPE gt) {
+    if(gt == GAME_TYPE::SERVER_PERSON)
+        AXLOG("called with gametype server person ");
     auto connectingScreen = ConnectingScreen::create();
-    object.addChild(connectingScreen, 4);
-    connectingScreen->setGameAndLoad(gt);
+    this->addChild(connectingScreen, 4);
+
+    this->schedule([this, connectingScreen, gt](float dt) {
+        connectingScreen->setGameAndLoad(gt);
+        this->unschedule("set_game_and_load_task");
+    }, 0.1f, "set_game_and_load_task");
 }
 
 bool LoadScreen::init()
@@ -78,11 +84,11 @@ bool LoadScreen::init()
             
             
         else if (isPointIn(labels[2], mouseLocation)) { // play with server
-            loadConnectingScreen(*this, GAME_TYPE::SERVER_BOT);
+            loadConnectingScreen(GAME_TYPE::SERVER_BOT);
         }
         
         else if (isPointIn(labels[3], mouseLocation)) { // play online
-            loadConnectingScreen(*this, GAME_TYPE::SERVER_PERSON);
+            loadConnectingScreen(GAME_TYPE::SERVER_PERSON);
         }
     };
 

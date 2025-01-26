@@ -26,7 +26,13 @@ type Client struct {
 }
 
 func (c *Client) sendGameOver(winner bool) {
-	err := c.conn.WriteJSON(map[string]string{"type": "gameOver", "winner": fmt.Sprintf("%d", winner)})
+	var returnString string
+	if winner {
+		returnString = "true"
+	} else {
+		returnString = "false"
+	}
+	err := c.conn.WriteJSON(map[string]string{"type": "gameOver", "winner": returnString})
 	if err != nil {
 		fmt.Println("Error sending gameover message.")
 	}
@@ -66,12 +72,13 @@ func (c *Client) getMove() int {
 		fmt.Println("Invalid move received by user with id:", c.uid)
 		return -1
 	}
+	fmt.Println(c.uid, " got move ", msg.LastMove)
 	return msg.LastMove
 }
 
 func (c *Client) sendMove(move int) {
 	returnMessage := newMessage(move)
-	fmt.Printf("Message to send: %+v\n", returnMessage)
+	fmt.Println(c.uid, " is sending ", move)
 	if err := c.conn.WriteJSON(returnMessage); err != nil {
 		if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 			fmt.Println("Connection closed by user.")
@@ -80,6 +87,22 @@ func (c *Client) sendMove(move int) {
 		fmt.Println("Error while sending move:", err)
 		return
 	}
+}
+
+func (c *Client) isConnOpen() bool {
+	err := c.conn.SetReadDeadline(time.Now().Add(time.Second))
+	if err != nil {
+		fmt.Println("Error setting read deadline:", err)
+		return false
+	}
+
+	err = c.conn.WriteMessage(websocket.PingMessage, nil)
+	if err != nil {
+		fmt.Println("Connection is closed or unreachable:", err)
+		return false
+	}
+
+	return true
 }
 
 func (c *Client) closeConnection() {

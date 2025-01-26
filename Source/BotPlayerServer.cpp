@@ -9,21 +9,20 @@
 #include <thread>
 #include <chrono>
 #include "WebSocketClient.h"
+#include "constants.h"
 
 BotPlayerServer::BotPlayerServer()
-: lastMessage({-1, -1}), wsClient(WebSocketClient::getInstance()) {
-    AXLOG("BotPlayerServer Called.");
-}
-
+: lastMessage({-1, -1}), wsClient(WebSocketClient::getInstance()) {}
 
 int BotPlayerServer::askBot() {
     int userMove = gameBoard.getLastMove().row;
     if(gameBoard.isGameOver()) {
-        wsClient.sendMove(userMove); // let it know game over
+        wsClient.sendAndReceiveMove(userMove); // let it know game over
         return -1;
     }
     AXLOG("User move sent: %d", userMove);
-    Message currentMessage = wsClient.sendMove(userMove);
+//    Message currentMessage = wsClient.receiveMove();
+    auto currentMessage = wsClient.sendAndReceiveMove(userMove);
     return currentMessage.lastMove;
 }
 
@@ -31,3 +30,7 @@ BotPlayerServer::~BotPlayerServer() {
     wsClient.reset();
 }
 
+
+void BotPlayerServer::onBackPressed() {
+//    wsClient.quitGame();
+}
