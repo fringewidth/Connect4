@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"net"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -25,31 +28,38 @@ type Client struct {
 	opponent int
 }
 
-func (c *Client) sendGameOver(winner bool) {
-	var returnString string
-	if winner {
-		returnString = "true"
-	} else {
-		returnString = "false"
+func (c *Client) writeJSONSafe(data interface{}) error {
+	err := c.conn.WriteJSON(data)
+	if err == nil {
+		return nil
 	}
-	err := c.conn.WriteJSON(map[string]string{"type": "gameOver", "winner": returnString})
-	if err != nil {
-		fmt.Println("Error sending gameover message.")
+	if err == io.EOF {
+		return fmt.Errorf("client closed connection. %w", err)
 	}
+	return fmt.Errorf("error while writing JSON: %w", err)
 }
 
-func (c *Client) sendOutcome(o Outcome, order int) {
-	var err error
+func boolToString(x bool) string {
+	if x {
+		return "true"
+	}
+	return "false"
+}
+
+func (c *Client) sendGameOver(winner bool, forfeited bool) error {
+	return c.writeJSONSafe(map[string]string{"type": "gameOver", "winner": boolToString(winner), "forfeit": boolToString(forfeited)})
+}
+
+func (c *Client) sendOutcome(o Outcome, order int) error {
 	switch o {
 	case ACCEPT:
-		err = c.conn.WriteJSON(map[string]string{"type": "accept", "order": fmt.Sprintf("%d", order)})
+		return c.writeJSONSafe(map[string]string{"type": "accept", "order": fmt.Sprintf("%d", order)})
 	case REJECT:
-		err = c.conn.WriteJSON(map[string]string{"type": "timeout"})
+		err := c.writeJSONSafe(map[string]string{"type": "timeout"})
 		c.closeConnection()
+		return err
 	}
-	if err != nil {
-		fmt.Println("Error sending outcome:", err)
-	}
+	return nil
 }
 
 func (c *Client) setHumanOpponent(c2 *Client) {
@@ -66,47 +76,46 @@ func (c *Client) create(conn *websocket.Conn) {
 	c.opponent = PENDING
 }
 
-func (c *Client) getMove() int {
+func (c *Client) getMove() (int, error) {
 	var msg MoveMessage
-	if err := c.conn.ReadJSON(&msg); err != nil || msg.LastMove < 0 || msg.LastMove > 6 {
-		fmt.Println("Invalid move received by user with id:", c.uid)
-		return -1
+
+	err := c.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+	if err != nil {
+		return -1, fmt.Errorf("failed to set read deadline: %w", err)
 	}
+
+	if err := c.conn.ReadJSON(&msg); err != nil {
+		if err == io.EOF {
+			return -1, fmt.Errorf("user disconnected: %w", err)
+		}
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			return -1, fmt.Errorf("read timeout exceeded (waiting for 30 seconds): %w", err)
+		}
+		return -1, fmt.Errorf("error reading move: %w", err)
+	}
+
 	fmt.Println(c.uid, " got move ", msg.LastMove)
-	return msg.LastMove
+	return msg.LastMove, nil
 }
 
-func (c *Client) sendMove(move int) {
+func (c *Client) sendMove(move int) error {
 	returnMessage := newMessage(move)
 	fmt.Println(c.uid, " is sending ", move)
-	if err := c.conn.WriteJSON(returnMessage); err != nil {
+	if err := c.writeJSONSafe(returnMessage); err != nil {
 		if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
-			fmt.Println("Connection closed by user.")
-			return
+			return fmt.Errorf("connection closed by user: %w", err)
 		}
-		fmt.Println("Error while sending move:", err)
-		return
+		return fmt.Errorf("error while sending move: %w", err)
 	}
-}
-
-func (c *Client) isConnOpen() bool {
-	err := c.conn.SetReadDeadline(time.Now().Add(time.Second))
-	if err != nil {
-		fmt.Println("Error setting read deadline:", err)
-		return false
-	}
-
-	err = c.conn.WriteMessage(websocket.PingMessage, nil)
-	if err != nil {
-		fmt.Println("Connection is closed or unreachable:", err)
-		return false
-	}
-
-	return true
+	return nil
 }
 
 func (c *Client) closeConnection() {
 	if err := c.conn.Close(); err != nil {
-		fmt.Println("Error closing connection:", err)
+		if !errors.Is(err, net.ErrClosed) {
+			fmt.Printf("Error closing connection for user %d: %v\n", c.uid, err)
+		}
+	} else {
+		fmt.Printf("Connection closed successfully for user %d.\n", c.uid)
 	}
 }

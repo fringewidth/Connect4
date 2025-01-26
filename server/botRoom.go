@@ -2,7 +2,9 @@ package main
 
 import (
 	gameBoard "Connect4Server/game-board"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 )
 
@@ -112,6 +114,16 @@ func askBot(gb *gameBoard.GameBoard) int {
 }
 
 func botRoom(c *Client) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Panic recovery in botRoom.")
+			if err := c.sendGameOver(true, false); err != nil {
+				fmt.Printf("error while sending game over: %v", err)
+			}
+			c.closeConnection()
+		}
+	}()
+
 	defer c.closeConnection()
 
 	c.setBotOpponent()
@@ -120,22 +132,32 @@ func botRoom(c *Client) {
 	gb.Init()
 
 	for !gb.IsGameOver() {
-		lastMove := c.getMove()
+		lastMove, err := c.getMove()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			c.sendGameOver(false, true)
+			return
+		}
 		fmt.Printf("Got %d from user %d\n", lastMove, c.uid)
 		if !gb.IsValidMove(lastMove) {
-			fmt.Println("invalid move by user. closing connection...")
+			fmt.Println("Invalid move by user. Closing connection...")
 			return
 		}
 		gb.MakeMove(lastMove)
 
 		if gb.IsGameOver() {
-			c.sendGameOver(true) // true : client won
+			c.sendGameOver(true, false) // true : client won
+			return
 		}
 
 		botMove := askBot(&gb)
 		gb.MakeMove(botMove)
-		c.sendMove(botMove)
+		if err = c.sendMove(botMove); err != nil {
+			return
+		}
 		fmt.Printf("Attempting to send %d to user %d\n", botMove, c.uid)
 	}
-	c.sendGameOver(false) // server won
+	c.sendGameOver(false, false) // server won
 }
