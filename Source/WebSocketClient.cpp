@@ -4,6 +4,7 @@
 #include "axmol.h"
 #include <memory>
 #include <boost/json/src.hpp>
+#include "constants.h"
 
 
 
@@ -11,29 +12,44 @@
 std::unique_ptr<WebSocketClient> WebSocketClient::instance = nullptr;
 
 
+void WebSocketClient::resetAndThrow(const std::string& errMsg) {
+    try {
+        reset();
+    }
+    catch (std::exception& e){
+        throw std::runtime_error(errMsg);
+    }
+    throw std::runtime_error(errMsg);
+}
+
 WebSocketClient::WebSocketClient(const std::string& host, const std::string& port)
     : host(host), port(port), ws(io_context) {
     connect();
 }
 
+
 void WebSocketClient::reset() {
     isFirst = true;
     host = SERVER_HOST;
     port = SERVER_PORT;
+
     try {
         if (ws.is_open()) {
             boost::system::error_code ec;
+
+            // Synchronously close the WebSocket to ensure it finishes properly.
             ws.close(boost::beast::websocket::close_code::going_away, ec);
             if (ec) {
                 std::cerr << "Error closing WebSocket: " << ec.message() << std::endl;
             }
         }
-        io_context.stop();
+
     } catch (const std::exception& e) {
         std::cerr << "Exception during WebSocket close: " << e.what() << std::endl;
     }
 
-    instance.reset(); 
+    // Safely reset the instance.
+    instance.reset();
 }
 
 WebSocketClient::~WebSocketClient() {
@@ -49,7 +65,7 @@ WebSocketClient& WebSocketClient::getInstance(const std::string& host, const std
         instance = std::make_unique<WebSocketClient>(host, port);
         instance->isFirst = instance->initializeConnection(gameType);
     }
-    
+
     return *instance;
 }
 
@@ -68,42 +84,36 @@ boost::json::object receiveAndParse(boost::beast::websocket::stream<boost::asio:
 }
 
 
-static void resetAndThrow(const std::string& errMsg) {
-    WebSocketClient::getInstance().reset();
-    throw std::runtime_error(errMsg);
-}
+
 
 bool WebSocketClient::initializeConnection(GAME_TYPE gameType) { // returns if client is first
-    try {
         boost::json::object initMessage = {
             {"type", "init"},
             {"mode",
                 gameType==GAME_TYPE::SERVER_PERSON ? "PERSON" : "BOT"
             }
         };
-        
+
         serializeAndSend(initMessage, ws);
         auto responseJSON = receiveAndParse(ws);
 
         if (gameType == GAME_TYPE::SERVER_PERSON && responseJSON["type"].as_string() == "timeout") {
+            AXLOG("timeout1");
             resetAndThrow("No one on the other side :(");
             return true; // error means reset to default ig
         } // only happens when mode is person
-        
+
         else if (responseJSON["type"].as_string() == "accept") {
             int order = std::stoi(std::string(responseJSON["order"].as_string()));
             AXLOG("Game accepted. Order: %d", order);
             return (order == 0);
         }
-        
+
         else {
             resetAndThrow("Server busy :(");
+            return true;
         }
-        
-    } catch (const std::exception& e) {
-        resetAndThrow(e.what());
-    }
-    
+
     return true; // should be dead code
 }
 
@@ -135,7 +145,7 @@ Message WebSocketClient::sendAndReceiveMove(int move) {
             { "lastMove", move },
             { "timestamp", timestamp }
         };
-  
+
         AXLOG("sending: %d", move);
 
         serializeAndSend(moveJSON, ws);
@@ -156,21 +166,20 @@ bool safeCheckValue(const boost::json::object obj, const std::string& key, const
 
 Message WebSocketClient::receiveMove() {
     try {
-        
+
         auto receivedJSON = receiveAndParse(ws);
 
-        
-        if (safeCheckValue(receivedJSON, "type", "gameOver")) {
-            std::string winner = std::string(receivedJSON["winner"].as_string());
-            std::cout << "Game Over. Winner: " << winner << std::endl;
-            return {};
+
+        if (safeCheckValue(receivedJSON, "type", "gameOver") && safeCheckValue(receivedJSON, "forfeit", "true")) {
+            AXLOG("opponent forfeited.");
+            return {FORFEIT_CODE, -1};
         }
-        
+
         if (!receivedJSON.contains("lastMove") || !receivedJSON.contains("timestamp")) {
             throw std::runtime_error("Missing required fields: 'lastMove' or 'timestamp'");
         }
 
-        
+
         Message message{
             static_cast<int>(receivedJSON["lastMove"].as_int64()),
             receivedJSON["timestamp"].as_int64()
@@ -179,7 +188,7 @@ Message WebSocketClient::receiveMove() {
         std::cout << "Parsed message - lastMove: " << message.lastMove
                   << ", timestamp: " << message.timestamp << std::endl;
 
-        
+
         lastReceivedMessage = message;
         return message;
 

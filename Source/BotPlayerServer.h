@@ -9,6 +9,7 @@
 #include "BotPlayer.h"
 #include "WebSocketClient.h"
 #include "ServerScreen.h"
+#include "constants.h"
 
 class BotPlayerServer : public BotPlayer {
 public:
@@ -19,11 +20,18 @@ public:
     ~BotPlayerServer();
     virtual int askBot() override;
     
-    void handleSecondTurn() {
+    int handleSecondTurn() {
         if(!myTurn){
-            placeDisc(wsClient.receiveMove().lastMove);
-            myTurn = !myTurn;
+            auto lastMove = wsClient.receiveMove().lastMove;
+            if(lastMove != FORFEIT_CODE){
+                placeDisc(lastMove);
+                myTurn = !myTurn;
+            }
+            else {
+                throw std::runtime_error("Your opoponent got cold feet.\nTry again.");
+            }
         }
+        return 0;
     }
     
     virtual void onBackPressed() override;

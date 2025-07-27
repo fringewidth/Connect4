@@ -4,14 +4,15 @@
 #include <boost/asio.hpp>
 #include "GameBoard.h"
 #include <memory>
-
+#include "axmol.h"
+#include "AudioEngine.h"
 using namespace ax;
 
 
 Vec2 MainScene::getBoardCoords(int up, int right){
     right = std::max(std::min(right, 6), 0);
     up = std::max(std::min(up, 5),0);
-    
+
     return DISC_ORIGIN + up * DISC_UP + right * DISC_RIGHT;
 }
 
@@ -27,14 +28,14 @@ Rect MainScene::getRect(TURN color) {
 
 Sprite* MainScene::getDisc(TURN color, bool glowing=false) {
     Rect rect = getRect(color);
-    auto fileName = glowing? "glows.png"sv : "disc.png"sv;
+    auto fileName = glowing? "disc-glow.png"sv : "disc.png"sv;
     return Sprite::create(fileName, rect);
 }
 
 void MainScene::glowUp(int up, int right, TURN winner, const std::function<void()>& callback) {
     auto glow = getDisc(winner, true);
     auto boardCoords = getBoardCoords(right, up);
-    
+
     if(glow){
         glow->setScale(SCALE);
         glow->setPosition(boardCoords);
@@ -45,27 +46,26 @@ void MainScene::glowUp(int up, int right, TURN winner, const std::function<void(
                                          CallFunc::create(callback),
                                          NULL
                                         );
-        glow->runAction(seq);
         this->addChild(glow);
+        glow->runAction(seq);
 
     }
 //    Rect rect = getRect(static_cast<TURN>(), )
 //    auto coinGlow = Sprite::create("glows.png"sv, )
 }
 
-void showEndScreen(Scene* scene, std::string message) {
+void MainScene::showEndScreen(std::string message) {
     auto endScreen = EndScreen::create();
     endScreen->setLabelText(message);
-    scene->addChild(endScreen, 10);
+    this->addChild(endScreen, 10);
 }
 
 void MainScene::signalDraw() {
-    showEndScreen(this, "It's a draw!");
+    showEndScreen("It's a draw!");
 }
 
 
 void MainScene::signalGameOver() {
-    askBot();
     auto winner = gameBoard.getCurrentTurn();
     auto gameOverShown = std::make_shared<bool>(false);
 
@@ -77,6 +77,7 @@ void MainScene::signalGameOver() {
             }
         });
     }
+    askBot(); // in case of server players, this lets the server know you've made a (winning) move.
 }
 
 void MainScene::signalGameOver(bool forfeited) {
@@ -89,33 +90,29 @@ void MainScene::signalGameOver(bool forfeited) {
 
 void MainScene::showGameOverScreen(TURN loser) {
     TURN winner = GameBoard::swapTurn(loser); // it just works idk bro.
-    showEndScreen(this, GameBoard::stringFromTurn(winner) + " Wins!");
+    showEndScreen(GameBoard::stringFromTurn(winner) + " Wins!");
 }
 
 // returns 1 for failure, 0 for success.
 int MainScene::placeDisc(int right){
-    if(right == FORFEIT_CODE) {
-        signalGameOver();
-        return;
-    }
+    AXLOG("called placeDisc");
     if(!gameBoard.isValidMove(right)){
         AXLOG("disc unplaced");
         return DISC_UNPLACED;
     }
+
     int up = gameBoard.makeMoveAndGetCol(right);
     if(up < 0) return DISC_UNPLACED;
     auto disc = getDisc(gameBoard.getCurrentTurn());
-    if(disc) {        
+    if(disc) {
         disc->setScale(SCALE);
         disc->setPosition(getBoardCoords(INT_MAX, right) + DISC_UP);
-        
+
         auto moveTo = MoveTo::create(0.5, getBoardCoords(up, right));
         auto jump = JumpBy::create(0.5, Vec2(0, 0), DISC_UP.y*0.4, 1);
-//        auto jump_ease_out = EaseBouncOut::create(jump->clone());
 
-//        AXLOG("%d, %d, %d", static_cast<int>(gameBoard.getCurrentTurn()), up, right);
         auto seq = Sequence::create(moveTo, jump, nullptr);
-        
+
         disc->runAction(seq);
         this->addChild(disc, 1);
         if(gameBoard.isGameOver()) {
@@ -129,7 +126,7 @@ int MainScene::placeDisc(int right){
         problemLoading("disc");
         return DISC_UNPLACED;
     }
-    
+return 0;
 }
 
 // returns 1 for success, zero for failure
@@ -164,6 +161,8 @@ bool MainScene::init()
     auto safeArea = _director->getSafeAreaRect();
     auto safeOrigin = safeArea.origin;
 
+
+
     /////////////////////////////
     // 2. add a menu item with "X" image, which is clicked to quit the program
     //    you may modify it.
@@ -187,13 +186,14 @@ bool MainScene::init()
 //    auto menu = Menu::create(closeItem, NULL);
 //    menu->setPosition(Vec2::ZERO);
 //    this->addChild(menu, 1);
-//    
-    
+//
+
+
     auto backLabel = Label::createWithTTF("Back", "fonts/Marker Felt.ttf", 24);
         if (backLabel)
         {
             backLabel->enableOutline(Color4B::RED, 2);
-            
+
             backLabel->setPosition(Vec2(origin.x + backLabel->getContentSize().width / 2,
                                         origin.y + visibleSize.height - backLabel->getContentSize().height / 2) - Vec2(-10, 10));
 
@@ -245,8 +245,8 @@ bool MainScene::init()
 //    }
     // add "HelloWorld" splash screen"
     this->addChild(getBackground(), 0);
-    
-    
+
+
     auto board = Sprite::create("board_front.png"sv);
     if(board){
         center(board, origin, visibleSize);
@@ -262,11 +262,31 @@ bool MainScene::init()
 
 void MainScene::onTouchesBegan(const std::vector<ax::Touch*>& touches, ax::Event* event)
 {
-    for (auto&& t : touches)
+    // Loop through all the touches
+    for (auto&& touch : touches)
     {
-//        AXLOG("onTouchesBegan detected, X:%f  Y:%f", t->getLocation().x, t->getLocation().y);
+        // Get the touch location
+        auto touchLocation = touch->getLocation();
+
+        // Convert the touch location to the scene's node space
+        auto touchScenePosition = this->convertToNodeSpace(touchLocation);
+
+        // Place a disc at the touch location
+        placeDiscAt(touchScenePosition);
+
+        // Check if the back button was touched
+        if (backLabel && backLabel->getBoundingBox().containsPoint(touchLocation))
+        {
+            auto loadScene = utils::createInstance<LoadScreen>();
+            onBackPressed();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, loadScene));
+        }
+
+        // Handle only the first touch (optional if you want to break early)
+        break;
     }
 }
+
 
 void MainScene::onTouchesMoved(const std::vector<ax::Touch*>& touches, ax::Event* event)
 {
@@ -286,17 +306,20 @@ void MainScene::onTouchesEnded(const std::vector<ax::Touch*>& touches, ax::Event
 
 void MainScene::onMouseDown(Event* event) {
     EventMouse* e = static_cast<EventMouse*>(event);
-    
+
     auto mouseWindowPosition = e->getLocationInView();
     auto mouseScenePosition = this->convertToNodeSpace(mouseWindowPosition);
     placeDiscAt(mouseScenePosition); // if you want to check for success, you can equality check with DISC_PLACED
-    
+
     if(backLabel && backLabel->getBoundingBox().containsPoint(e->getLocation())) {
         auto loadScene = utils::createInstance<LoadScreen>();
         onBackPressed();
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, loadScene));
     }
 }
+
+
+
 
 void MainScene::onMouseUp(Event* event)
 {
@@ -340,7 +363,7 @@ void MainScene::update(float delta)
     {
         /////////////////////////////
         // Add your codes below...like....
-        // 
+        //
         // UpdateJoyStick();
         // UpdatePlayer();
         // UpdatePhysics();
@@ -361,7 +384,7 @@ void MainScene::update(float delta)
     case GameState::menu1:
     {    /////////////////////////////
         // Add your codes below...like....
-        // 
+        //
         // UpdateMenu1();
         break;
     }
@@ -369,7 +392,7 @@ void MainScene::update(float delta)
     case GameState::menu2:
     {    /////////////////////////////
         // Add your codes below...like....
-        // 
+        //
         // UpdateMenu2();
         break;
     }
@@ -377,7 +400,7 @@ void MainScene::update(float delta)
     case GameState::end:
     {    /////////////////////////////
         // Add your codes below...like....
-        // 
+        //
         // CleanUpMyCrap();
         menuCloseCallback(this);
         break;
@@ -390,7 +413,7 @@ void MainScene::menuCloseCallback(ax::Object* sender)
 {
     // Close the axmol game scene and quit the application
     _director->end();
-    
+
     /*To navigate back to native iOS screen(if present) without quitting the application  ,do not use
      * _director->end() as given above,instead trigger a custom event created in RootViewController.mm
      * as below*/

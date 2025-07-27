@@ -41,7 +41,7 @@ bool LoadScreen::init()
         "Play Online"
     };
     std::vector<Label*> labels(4);
-    
+
     for (size_t i = 0; i < texts.size(); ++i) {
         Vec2 position(visibleSize.width / 2, visibleSize.height * positions[i]);
         auto label = createStyledLabel(texts[i], position);
@@ -53,9 +53,44 @@ bool LoadScreen::init()
             return false;
         }
     }
+    
+    auto touchListener = EventListenerTouchOneByOne::create();
+    touchListener->onTouchBegan = [labels, this](Touch* touch, Event* event) {
+        Vec2 touchLocation = touch->getLocation(); // Get the touch location.
+
+        if (isPointIn(labels[0], touchLocation)) { // Play with yourself
+            AXLOG("Attempting to create MainScene...");
+            auto scene = utils::createInstance<MainScene>();
+            if (scene) {
+                AXLOG("MainScene created successfully.");
+                Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
+            } else {
+                AXLOG("Failed to create MainScene.");
+            }
+        } else if (isPointIn(labels[1], touchLocation)) { // Play with bot
+            AXLOG("Attempting to create BotPlayer...");
+            auto scene = utils::createInstance<BotPlayer>();
+            if (scene) {
+                AXLOG("BotPlayer created successfully.");
+                Director::getInstance()->pushScene(TransitionFade::create(0.5f, scene));
+            } else {
+                AXLOG("Failed to create BotPlayer.");
+            }
+        } else if (isPointIn(labels[2], touchLocation)) { // Play with server
+            loadConnectingScreen(GAME_TYPE::SERVER_BOT);
+        } else if (isPointIn(labels[3], touchLocation)) { // Play online
+            loadConnectingScreen(GAME_TYPE::SERVER_PERSON);
+        }
+
+        return true; // Return true to indicate the touch event is handled.
+    };
+
+
+    this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, this);
+
 
     auto mouseListener = EventListenerMouse::create();
-        
+
     mouseListener->onMouseDown = [labels, this](EventMouse* event) {
         Vec2 mouseLocation = event->getLocation();
 
@@ -69,8 +104,8 @@ bool LoadScreen::init()
                     AXLOG("Failed to create MainScene.");
                 }
             }
-            
-            
+
+
         else if (isPointIn(labels[1], mouseLocation)) { // play with bot
                 AXLOG("Attempting to create BotPlayer...");
                 auto scene = utils::createInstance<BotPlayer>();
@@ -81,19 +116,19 @@ bool LoadScreen::init()
                         AXLOG("Failed to create BotPlayer.");
                 }
             }
-            
-            
+
+
         else if (isPointIn(labels[2], mouseLocation)) { // play with server
             loadConnectingScreen(GAME_TYPE::SERVER_BOT);
         }
-        
+
         else if (isPointIn(labels[3], mouseLocation)) { // play online
             loadConnectingScreen(GAME_TYPE::SERVER_PERSON);
         }
     };
 
-    _eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
-    
+//    _eventDispatcher->addEventListenerWithSceneGraphPriority(mouseListener, this);
+
     this->addChild(getBackground(), 0);
 
     scheduleUpdate();
@@ -127,7 +162,7 @@ void LoadScreen::onTouchesEnded(const std::vector<ax::Touch*>& touches, ax::Even
 }
 
 void LoadScreen::onMouseDown(Event* event) {
-
+    AXLOG("Called here.");
 }
 
 void LoadScreen::onMouseUp(Event* event)
@@ -222,7 +257,7 @@ void LoadScreen::menuCloseCallback(ax::Object* sender)
 {
     // Close the axmol game scene and quit the application
     _director->end();
-    
+
     /*To navigate back to native iOS screen(if present) without quitting the application  ,do not use
      * _director->end() as given above,instead trigger a custom event created in RootViewController.mm
      * as below*/

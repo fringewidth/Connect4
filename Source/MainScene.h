@@ -127,10 +127,13 @@ public:
     void glowUp(int, int, TURN, const std::function<void()>&);
     
     void showGameOverScreen(TURN);
+    void showEndScreen(std::string);
     
     void signalDraw();
     
-    virtual int askBot() {};
+    virtual int askBot() {
+        return 0;
+    };
     
     virtual void onBackPressed(){};
 

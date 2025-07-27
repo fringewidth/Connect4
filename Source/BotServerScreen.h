@@ -13,7 +13,7 @@
 class BotServerScreen : public ConnectingScreen {
 public:
     virtual void connectAndReplaceSelf() {
-        WebSocketClient::getInstance("localhost", "8080", GAME_TYPE::SERVER_BOT);
+        WebSocketClient::getInstance(SERVER_HOST, SERVER_PORT, GAME_TYPE::SERVER_BOT);
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f,utils::createInstance<BotPlayerServer>()));
     }
 };

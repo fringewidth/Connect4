@@ -11,7 +11,7 @@ const auto USER_TURN = RED;
 int checkAlignment(GameBoard& gb, int row, int col, int dRow, int dCol) {
     int piece = gb.game_board_map[col][row];
     int alignmentCount = 1;
-    
+
     for (int i = 1; i < 4; i++) {
         int newRow = row + i * dRow;
         int newCol = col + i * dCol;
@@ -36,15 +36,15 @@ int checkAlignment(GameBoard& gb, int row, int col, int dRow, int dCol) {
         return std::pow(100, alignmentCount - 1) * -1 * piece;
                                                 // ^ this should be variable based on user turn
     }
-    
+
 
     return 0;
 }
 
 
-int evaluateBoard(GameBoard& gb) {
+int  evaluateBoard(GameBoard& gb) {
     int score = 0;
-    
+
     for (int row = 0; row < 6; row++) {
         for (int col = 0; col < 7; col++) {
             if (gb.game_board_map[col][row] != 0) {
@@ -94,8 +94,9 @@ int minimax(GameBoard& gb, int alpha, int beta, int depth, bool isMaximizing) {
 
 int BotPlayer::askBot() {
     if(gameBoard.isGameOver()) return -1;
-    AXLOG("Asking bot...");
+    AXLOG("Asking bot..now");
     int bestMove = -1;
+
     int bestScore = INT_MIN;
     for(int col = 0; col < 7; col++){
         if(!gameBoard.isValidMove(col)) {
@@ -113,24 +114,31 @@ int BotPlayer::askBot() {
 }
 
 int BotPlayer::placeDiscAt(ax::Vec2 coords) {
-    if (myTurn) {
+    if (myTurn.load()) {
         auto discStatus = MainScene::placeDiscAt(coords);
         if(discStatus == DISC_UNPLACED) {
             return DISC_UNPLACED;
         }
-        myTurn = !myTurn;
+        myTurn.store(!myTurn.load());
 
-        if (!gameBoard.isGameOver() && !isBotActive) {
+        if (!gameBoard.isGameOver() && !isBotActive.load()) {
             std::lock_guard<std::mutex> lock(botMutex);
 
-            isBotActive = true;
+            isBotActive.store(true);
 
             std::thread botThread([this]() {
-                placeDisc(askBot());
+                auto position = askBot();
+                if(position == FORFEIT_CODE) {
+                    this->showEndScreen("Forfeit! You win.");
+                    return;
+                }
+                placeDisc(position);
                 myTurn = !myTurn;
-                isBotActive = false;
+                isBotActive.store(false);
             });
             botThread.detach();
         }
+        return DISC_PLACED;
     }
+    return DISC_UNPLACED;
 }

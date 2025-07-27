@@ -20,6 +20,7 @@ auto const DISC_UNPLACED = 1;
 auto const FONT_SIZE = 40;
 
 auto const FORFEIT_CODE = -255;
+auto const PREMATURE_FORFEIT_CODE = -512;
 
 
 inline static void problemLoading(const char* filename)
@@ -42,7 +43,7 @@ inline static Sprite* getBackground() {
         // position the sprite on the center of the screen
         center(background, Director::getInstance()->getVisibleOrigin(), Director::getInstance()->getVisibleSize());
         background->setScale(1.2, 1.2);
-        
+
     }    // add the sprite as a child to this layer
     return background;
 }
@@ -59,7 +60,7 @@ inline Label* createStyledLabel(const std::string& text, const Vec2& position) {
 inline Label* centeredText(std::string text) {
     auto centerLabel = createStyledLabel(text, Vec2{0,0});
     if (centerLabel) {
-        
+
         //center the label on the screen
         center(centerLabel, Director::getInstance()->getVisibleOrigin(), Director::getInstance()->getVisibleSize());
     }

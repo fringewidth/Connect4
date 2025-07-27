@@ -17,8 +17,10 @@
 #include <mutex>
 #include <memory>
 
-auto const SERVER_HOST = "localhost";
+auto const SERVER_HOST = "10.187.96.122";
 auto const SERVER_PORT = "8080";
+
+auto const UNINITALIZED_CODE = -128;
 
 struct Message {
     int lastMove;
@@ -35,7 +37,7 @@ class WebSocketClient { // will be a singleton
     boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws;
     std::string host;
     std::string port;
-    
+
     bool initializeConnection(GAME_TYPE);
 
 
@@ -44,33 +46,38 @@ public:
     WebSocketClient(const WebSocketClient&) = delete;
     WebSocketClient& operator=(const WebSocketClient&) = delete;
 //    void quitGame(){};
-    
-    
+
+
     static std::unique_ptr<WebSocketClient> instance;
-    
+
     bool isFirst = true;
 
-    
-    
+    void resetAndThrow(const std::string& errMsg);
+
+
+
     static WebSocketClient& getInstance(const std::string& host=SERVER_HOST, const std::string& port=SERVER_PORT, GAME_TYPE gameType=GAME_TYPE::SERVER_BOT);
 //    static WebSocketClient& getInstance();
-    
+
     std::mutex messageMutex;
     ~WebSocketClient();
-    
+
     void listen();
     void connect();
-    
+
     void reset();
 
-    
+
     Message getLastMessage();
-    
+
     Message sendAndReceiveMove(int);
     Message receiveMove();
-    
-    Message lastReceivedMessage;
-    
+
+    Message lastReceivedMessage{
+        UNINITALIZED_CODE,
+        UNINITALIZED_CODE
+    };
+
 };
 
 #endif // __WEB_SOCKET_CLIENT_H__

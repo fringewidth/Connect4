@@ -21,7 +21,6 @@ int BotPlayerServer::askBot() {
         return -1;
     }
     AXLOG("User move sent: %d", userMove);
-//    Message currentMessage = wsClient.receiveMove();
     auto currentMessage = wsClient.sendAndReceiveMove(userMove);
     return currentMessage.lastMove;
 }
@@ -32,5 +31,5 @@ BotPlayerServer::~BotPlayerServer() {
 
 
 void BotPlayerServer::onBackPressed() {
-//    wsClient.quitGame();
+//    wsClient.reset();
 }

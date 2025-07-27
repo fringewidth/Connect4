@@ -15,11 +15,10 @@ class BotPlayer : public MainScene {
     virtual int placeDiscAt(ax::Vec2) override;
     virtual int askBot() override;
     std::mutex botMutex;
-    std::mutex turnMutex;
-    bool isBotActive = false;
-    
+    std::atomic<bool> isBotActive{false};
+
 public:
-    bool myTurn = true;
+    std::atomic<bool> myTurn{true};
 
 };
 
